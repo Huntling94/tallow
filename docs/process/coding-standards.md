@@ -14,7 +14,7 @@ Standards are enforced by tools wherever possible. Where a tool does not exist y
 
 - **Typed everywhere.** Every variable, parameter and return value has a type. Required in `game/src/sim/`, expected elsewhere.
 - **Style:** the official GDScript style guide. `snake_case` for files, functions and variables; `PascalCase` for classes and nodes; `CONSTANT_CASE` for constants. Tabs for indentation.
-- **Formatting and linting:** `gdformat` and `gdlint` in pre-commit and CI (added in M0, step 6).
+- **Formatting and linting:** `gdformat` and `gdlint` in pre-commit and CI.
 - **Simulation code (`game/src/sim/`)** follows ADR-0002:
   - No `Node`, scene, resource-loading or rendering references. Plain classes (`RefCounted`) only.
   - No wall-clock time (`Time`, `OS.get_ticks_*`). Time is the simulation's own tick.

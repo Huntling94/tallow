@@ -16,11 +16,21 @@ const RULES: Array[Array] = [
 	["\\b(MeshInstance3D|Camera3D|RenderingServer|Sprite2D|Sprite3D)\\b", "rendering"],
 	["\\bTime\\.", "wall-clock time"],
 	["\\bOS\\.get_ticks_", "wall-clock time"],
+	["\\bEngine\\.get_(physics|process)_frames\\b", "frame counter"],
 	# Global functions only: "(?<![.\\w])" skips methods such as _rng.randi_range().
 	[
-		"(?<![.\\w])(randi|randf|randi_range|randf_range|randomize|seed)\\s*\\(",
+		(
+			"(?<![.\\w])(randi|randf|randfn|randi_range|randf_range|randomize|seed|rand_from_seed)"
+			+ "\\s*\\("
+		),
 		"unseeded randomness",
 	],
+	# A generator's own randomize() reseeds it from the clock.
+	["\\.randomize\\s*\\(", "unseeded randomness"],
+	# A new generator starts from a random seed; use the one passed in.
+	["\\bRandomNumberGenerator\\.new\\s*\\(", "unseeded randomness"],
+	# Array.shuffle() and Array.pick_random() use the global generator.
+	["\\.(shuffle|pick_random)\\s*\\(", "unseeded randomness"],
 	["(?<![.\\w])(load|preload)\\s*\\(", "resource loading"],
 	["\\b(ResourceLoader|FileAccess|DirAccess)\\b", "file or resource access"],
 	["\\bInput\\.", "input"],
@@ -28,7 +38,8 @@ const RULES: Array[Array] = [
 
 
 ## Returns one "line N: reason" entry per forbidden reference in the source.
-## Comments are ignored.
+## Comments are ignored. Known limit: a "#" inside a string starts the comment
+## early, and text inside multi-line strings is scanned as code.
 static func find_violations(source: String) -> PackedStringArray:
 	var violations := PackedStringArray()
 	var compiled: Array[RegEx] = []

@@ -2,7 +2,7 @@
 
 > Living document. Updated whenever an ADR or a milestone changes the shape of the system.
 >
-> **Status: design.** This page describes the target architecture. As of M0, only the repository's checks and documentation exist; the containers and components below are built from M0 step 6 onwards (see the [roadmap](../milestones/roadmap.md)). Elements marked *planned* come after the vertical slice.
+> **Status: design.** This page describes the target architecture. As of M0 step 6, the Godot project exists with its lint and test setup; the containers and components below are built from step 7 onwards (see the [roadmap](../milestones/roadmap.md)). Elements marked *planned* come after the vertical slice.
 
 Tallow has one authoritative simulation, a 3D presentation that shows it, and a Python analysis layer that learns from it. Fitted models flow back into the game as data, never as code.
 
@@ -276,7 +276,7 @@ game/                    Godot 4 project
   assets/                models, textures, audio, fonts (each listed in CREDITS.md)
   data/                  balance tables and fitted coefficients (versioned JSON)
   tools/                 headless runner
-  tests/                 gdUnit4: unit/, invariants/, golden/
+  tests/                 gdUnit4: unit/, invariants/, golden/, plus support/ helpers and fixtures/
 analysis/                Python, managed with uv
   src/tallow_analysis/   io, features, models, calibration, reports
   tests/
