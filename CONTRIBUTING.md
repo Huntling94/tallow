@@ -24,7 +24,7 @@ Every change after the first commit arrives by pull request:
 7. **Maintainer review (gate 3: is it right and is it good).** The maintainer reads the review, plays the build and decides.
 8. **Merge.** Once the maintainer explicitly approves the pull request, it is squash merged to `main`.
 
-A CI check fails the pull request if the Independent review section is incomplete, the verdict is "Changes needed", or the reviewed commit is not one of the pull request's own commits. If later commits follow the review, the check warns rather than fails: the review is re-run after significant changes, and the maintainer judges whether that was needed before merging.
+A CI check fails the pull request if the Independent review section is incomplete, the verdict is "Changes needed", or the reviewed commit is not one of the pull request's own commits. If commits after the review touch any file the review did not cover, the check fails until the review is re-run. If they only touch files the review covered, it warns: the review is re-run after significant changes, and the maintainer judges whether that was needed before merging.
 
 The full process is in [`docs/process/`](docs/process/).
 

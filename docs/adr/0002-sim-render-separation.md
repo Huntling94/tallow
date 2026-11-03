@@ -1,6 +1,6 @@
 # ADR-0002: Keep one deterministic simulation, separate from rendering
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-03)
 - **Date:** 2026-11-03
 - **Related:** [ADR-0001](0001-engine-godot.md), [ADR-0003](0003-telemetry-format.md), [architecture overview](../architecture/overview.md)
 
@@ -40,7 +40,7 @@ Godot makes it easy to mix rules into scenes and nodes, where they depend on fra
 
 1. **No engine scene types in `game/src/sim/`.** Classes extend `RefCounted` (or nothing). No `Node`, scenes, resource loading, signals to the scene tree, input or rendering.
 2. **Fixed ticks.** The simulation advances in fixed steps of its own time. It never reads frame time or the wall clock.
-3. **Seeded randomness only.** One run seed. Each system gets its own random stream derived from the run seed and the system's name, so adding a system does not change the others' random numbers. No global `randi()` or `randf()`.
+3. **Seeded randomness only.** One run seed. Each system gets its own random stream derived from the run seed and a fixed hash of the system's name, so adding a system does not change the others' random numbers. The hash is written in the simulation code, not taken from the engine (Godot's `String.hash()` is not guaranteed to stay the same between versions). The engine's seeded generator could also change between Godot versions, so every engine upgrade is checked against the golden-seed tests before it merges. No global `randi()` or `randf()`.
 4. **Commands in, state and events out.** Presentation and bots send commands (build a pit, assign crews, sell oil). The simulation applies them at a tick boundary and exposes read-only state and a stream of events. Presentation never changes simulation state directly.
 5. **Deterministic order.** No iteration over unordered collections where order affects results; sort by a stable id.
 6. **Telemetry through one interface.** The simulation emits events; a writer outside `sim/` turns them into files (ADR-0003).

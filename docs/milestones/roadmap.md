@@ -13,7 +13,7 @@ Simulation first, then the 3D defence, then everything that makes it a town. Eac
 | **M6 Town walk** | Your house, shops, the exchange floor, rumours | Does walking change a decision? |
 | **M7 Depth** | Survey office, evolving herds, a second species, unlocks, generated valleys, modifiers | Is the tenth run as interesting as the third? |
 
-One simulation only: the authoritative simulation runs inside Godot, headless when needed, and exports telemetry. Python analyses and fits models; it does not duplicate the rules. See ADR-0002 (simulation separate from rendering).
+One simulation only: the authoritative simulation runs inside Godot, headless when needed, and exports telemetry. Python analyses and fits models; it does not duplicate the rules. See [ADR-0002](../adr/0002-sim-render-separation.md).
 
 ## M0: Foundations
 
@@ -24,8 +24,8 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 1. Review check: a plain CI check that the PR's Independent review section is complete (done: landed with step 2 in #2)
 2. Governance: issue and PR templates, CODEOWNERS, contributing, conduct, security, labels, milestones (done: #2)
 3. AI workflow and process docs: CLAUDE.md, agents, skills, workflow, standards (done: #7)
-4. Vision, design skeleton, roadmap and risks
-5. ADRs 0001 to 0004, the architecture overview and the docs index
+4. Vision, design skeleton, roadmap and risks (done: #10)
+5. ADRs 0001 to 0004, the architecture overview and the docs index (done: merged in #10, reviewed in #12)
 6. Godot project skeleton, gdformat and gdlint, gdUnit4, a first test, and a CI lint-and-test job
 7. Python analysis skeleton (uv, ruff, pytest) and its CI job
 8. A headless runner stub writing telemetry, a notebook reading it, and a CI smoke run

@@ -9,7 +9,10 @@ Reads the PR body from the PR_BODY environment variable. Fails when:
   - the reviewed commit is not one of this pull request's own commits: it must
     be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA).
 
-Warns, without failing, when the reviewed commit is not the latest one.
+  - commits after the reviewed commit touch any file the review did not cover
+    (one that is not in the diff from the base to the reviewed commit).
+
+Warns, without failing, when later commits only touch files the review covered.
 
 This is a plain text check. It confirms the review was recorded, not that it
 was good: judging that is the maintainer's job at merge.
@@ -67,6 +70,29 @@ def is_ancestor(sha: str, of: str) -> bool:
     return result.returncode == 0
 
 
+def changed_paths(start: str, end: str, since_branch_point: bool = False) -> set[str]:
+    """Return every path that differs between two commits (a rename counts as both paths).
+
+    With since_branch_point, compare from where the two histories meet (start...end),
+    so changes made on the base branch after the branch was cut are left out.
+    """
+    commits = [f"{start}...{end}"] if since_branch_point else [start, end]
+    result = subprocess.run(
+        ["git", "diff", "--name-only", "--no-renames", *commits],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return {line for line in result.stdout.splitlines() if line}
+
+
+def unreviewed_paths(base: str, reviewed: str, head: str) -> list[str]:
+    """Return this pull request's paths changed after the review that the review did not cover."""
+    covered = changed_paths(base, reviewed, since_branch_point=True)
+    own = changed_paths(base, head, since_branch_point=True)
+    return sorted((changed_paths(reviewed, head) & own) - covered)
+
+
 def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[str]:
     """Return a list of problems; empty means the check passes."""
     raw = extract_section(body.replace("\r\n", "\n"), SECTION)
@@ -97,10 +123,17 @@ def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[
                 "so it is not this pull request's change."
             )
         elif not head_sha.lower().startswith(sha.lower()):
-            print(
-                f"::warning title=Independent review::The review covers {sha}, not the "
-                f"latest commit {head_sha[:7]}. Re-run it if the changes since are significant."
-            )
+            unreviewed = unreviewed_paths(base_sha, sha, head_sha) if base_sha else []
+            if unreviewed:
+                problems.append(
+                    f"Commits after the reviewed commit {sha} touch files the review did "
+                    f"not cover: {', '.join(unreviewed)}. Re-run the review."
+                )
+            else:
+                print(
+                    f"::warning title=Independent review::The review covers {sha}, not the "
+                    f"latest commit {head_sha[:7]}. Re-run it if the changes since are significant."
+                )
 
     return problems
 

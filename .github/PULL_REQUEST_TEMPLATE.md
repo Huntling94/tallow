@@ -29,7 +29,7 @@ Spec: <!-- docs/specs/NNNN-title.md, or "not needed" for chores and docs -->
 Filled in by the reviewer agent (/independent-review), run with fresh context
 against the diff and the spec. CI fails while any field below is empty, the
 verdict is "Changes needed", or the reviewed commit is not one of this pull
-request's own commits.
+request's own commits, or later commits touch files the review did not cover.
 Re-run the review after significant changes.
 -->
 

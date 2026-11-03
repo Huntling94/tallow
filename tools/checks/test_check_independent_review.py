@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -98,10 +101,112 @@ class CommitTests(unittest.TestCase):
             problems = review.check(body(commit="abcdef1"), HEAD, BASE)
         self.assertTrue(any("base branch" in p for p in problems), problems)
 
-    def test_earlier_branch_commit_passes_with_a_warning(self) -> None:
-        with ancestry({"abcdef1"}, set()), mock.patch("builtins.print") as printed:
+    def test_edits_after_review_pass_with_a_warning(self) -> None:
+        with ancestry({"abcdef1"}, set()), mock.patch.object(
+            review, "unreviewed_paths", return_value=[]
+        ), mock.patch("builtins.print") as printed:
             self.assertEqual(review.check(body(commit="abcdef1"), HEAD, BASE), [])
         self.assertIn("::warning", printed.call_args.args[0])
+
+    def test_unreviewed_files_after_review_fail(self) -> None:
+        with ancestry({"abcdef1"}, set()), mock.patch.object(
+            review, "unreviewed_paths", return_value=["docs/adr/0002.md"]
+        ):
+            problems = review.check(body(commit="abcdef1"), HEAD, BASE)
+        self.assertTrue(any("docs/adr/0002.md" in p for p in problems), problems)
+
+
+class GitTests(unittest.TestCase):
+    """Run the git helpers against a real throwaway repository."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        self.addCleanup(os.chdir, self.cwd)
+        self.git("init", "-q")
+        self.git("config", "user.email", "test@example.com")
+        self.git("config", "user.name", "Test")
+        Path("a.md").write_text("one\n", encoding="utf-8")
+        self.first = self.commit("first")
+
+    def git(self, *args: str) -> str:
+        return subprocess.run(
+            ["git", *args], capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    def commit(self, message: str) -> str:
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", message)
+        return self.git("rev-parse", "HEAD")
+
+    def reviewed_edit_of_a(self) -> str:
+        """Add b.md on the base, then make a reviewed commit that edits only a.md."""
+        Path("b.md").write_text("base\n", encoding="utf-8")
+        self.base = self.commit("base")
+        Path("a.md").write_text("reviewed\n", encoding="utf-8")
+        return self.commit("reviewed")
+
+    def test_later_edit_to_a_reviewed_file_is_covered(self) -> None:
+        reviewed = self.reviewed_edit_of_a()
+        Path("a.md").write_text("fixed\n", encoding="utf-8")
+        head = self.commit("fix")
+        self.assertEqual(review.unreviewed_paths(self.base, reviewed, head), [])
+
+    def test_later_edit_to_an_unreviewed_file_is_reported(self) -> None:
+        reviewed = self.reviewed_edit_of_a()
+        Path("b.md").write_text("slipped in\n", encoding="utf-8")
+        head = self.commit("edit b")
+        self.assertEqual(review.unreviewed_paths(self.base, reviewed, head), ["b.md"])
+
+    def test_new_and_renamed_files_are_reported(self) -> None:
+        reviewed = self.reviewed_edit_of_a()
+        Path("c.md").write_text("new\n", encoding="utf-8")
+        Path("b.md").rename("d.md")
+        head = self.commit("add and rename")
+        self.assertEqual(
+            review.unreviewed_paths(self.base, reviewed, head), ["b.md", "c.md", "d.md"]
+        )
+
+    def test_base_moving_ahead_does_not_count_as_reviewed(self) -> None:
+        # main and the branch both start here, with a.md and b.md.
+        Path("b.md").write_text("base\n", encoding="utf-8")
+        self.commit("start")
+        start_branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
+        self.git("checkout", "-q", "-b", "feature")
+        Path("a.md").write_text("reviewed\n", encoding="utf-8")
+        reviewed = self.commit("reviewed edit of a")
+        # main moves ahead and edits b.md, which the review never saw.
+        self.git("checkout", "-q", start_branch)
+        Path("b.md").write_text("main changed\n", encoding="utf-8")
+        base = self.commit("main edits b")
+        # After the review, the branch edits b.md too.
+        self.git("checkout", "-q", "feature")
+        Path("b.md").write_text("branch changed\n", encoding="utf-8")
+        head = self.commit("branch edits b")
+        self.assertEqual(review.unreviewed_paths(base, reviewed, head), ["b.md"])
+
+    def test_merging_the_base_in_is_not_reported(self) -> None:
+        Path("b.md").write_text("base\n", encoding="utf-8")
+        self.commit("start")
+        start_branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
+        self.git("checkout", "-q", "-b", "feature")
+        Path("a.md").write_text("reviewed\n", encoding="utf-8")
+        reviewed = self.commit("reviewed edit of a")
+        self.git("checkout", "-q", start_branch)
+        Path("b.md").write_text("main changed\n", encoding="utf-8")
+        base = self.commit("main edits b")
+        self.git("checkout", "-q", "feature")
+        self.git("merge", "-q", "--no-edit", start_branch)
+        head = self.git("rev-parse", "HEAD")
+        self.assertEqual(review.unreviewed_paths(base, reviewed, head), [])
+
+    def test_ancestry_uses_real_history(self) -> None:
+        Path("a.md").write_text("two\n", encoding="utf-8")
+        head = self.commit("edit")
+        self.assertTrue(review.is_ancestor(self.first, head))
+        self.assertFalse(review.is_ancestor(head, self.first))
 
 
 class MainTests(unittest.TestCase):
