@@ -20,7 +20,7 @@ Tallow is built with Claude Code. This page says what the AI does, what it may n
 
 ## What Claude may not do
 
-- Push to `main` or force-push. (Blocked in `.claude/settings.json` and by branch protection.)
+- Push to `main` or force-push. (Branch protection on `main` blocks it; `.claude/settings.json` also catches the common forms of the command.)
 - Merge a PR without the maintainer's explicit approval of that PR. (Every merge command also asks the maintainer to confirm, set in `.claude/settings.json`.)
 - Write or alter the reviewer's verdict.
 - Change branch protection, repository settings or secrets.
@@ -32,7 +32,7 @@ Tallow is built with Claude Code. This page says what the AI does, what it may n
 
 Defined in `.claude/` and committed, so anyone can see exactly how the AI is instructed.
 
-- **`reviewer` agent:** reviews a diff against its spec with fresh context. Read-only. It is given only the branch, the issue and the spec, never the implementer's own summary, so its review is independent.
+- **`reviewer` agent:** reviews a diff against its spec with fresh context. Read-only. It is given only the branch, the base branch, the issue, the spec and the PR number, never the implementer's own summary, so its review is independent.
 - **`test-writer` agent:** writes tests from acceptance criteria without reading the implementation, so tests check behaviour rather than mirror the code.
 - **Skills:** `/spec`, `/adr`, `/independent-review` and `/devlog` encode the repeatable steps of the workflow.
 
