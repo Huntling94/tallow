@@ -8,9 +8,9 @@ Land the foundations as small pull requests, each independently reviewed by a fr
 
 ## What happened
 
-The third pack, #10 (vision, design skeleton, roadmap and risks), was reviewed at `f8da91d` and passed with four small wording notes. Claude fixed them and committed with `git add docs`.
+The third pack, #10 (vision, design skeleton, roadmap and risks), was reviewed at `f8da91d` and passed with five notes. Claude fixed four of them, all one-line edits, and committed with `git add docs`.
 
-That command staged every new file under `docs/`, including the whole fourth pack (ADRs 0001 to 0004, the architecture overview and the docs index), so commit `c7b8ddb` held 11 files and 588 added lines. Claude had checked `git diff --stat`, which only shows files git already tracks, so the new ones never appeared.
+That command staged every new file under `docs/`, including the whole fourth pack (the ADR index and template, ADRs 0001 to 0004, the architecture overview and the docs index), so commit `c7b8ddb` held 11 files and 588 added lines. Claude had checked `git diff --stat`, which only shows files git already tracks, so the new ones never appeared.
 
 The review check flagged it: the review covered `f8da91d`, not the latest commit. Claude read the warning as expected noise from a four-line fix, told the maintainer the fixes were "one-line wording changes", and merged #10 on the maintainer's approval.
 
@@ -35,7 +35,7 @@ The catch-up (#12) took three review rounds, and each found something real:
 - **The review check now fails** when commits after the reviewed commit touch any file the review did not cover, measured from where the branch left `main`. Replaying #10's history through it fails and lists all eight files.
 - **23 tests** cover the check, six of them against real git repositories.
 - **Coding standards:** stage files by name and run `git diff --cached --stat` before every commit.
-- **#10 carries a correction** pointing to #12.
+- **#10 carries a correction** pointing to #11 and #12.
 
 The lesson for an AI-assisted workflow: checks that warn rely on someone reading the warning with fresh eyes, and the AI that made the change is the worst-placed reader. Make the important ones fail.
 
