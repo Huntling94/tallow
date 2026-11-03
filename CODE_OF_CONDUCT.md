@@ -33,7 +33,7 @@ The maintainer also moderates the project directly, by hiding or removing conten
 
 ## Enforcement
 
-The maintainer may remove, edit or reject comments, commits, code, issues and other contributions that break this code, and may warn, temporarily ban or permanently ban anyone whose behaviour is inappropriate, threatening, offensive or harmful. The enforcement guidelines in the Contributor Covenant apply.
+The maintainer may remove, edit or reject comments, commits, code, issues and other contributions that break this code, and may warn, temporarily ban or permanently ban anyone whose behaviour is inappropriate, threatening, offensive or harmful. The maintainer follows the Contributor Covenant's enforcement guidelines for what they see and moderate; reports made through Report abuse are reviewed by GitHub.
 
 ## Attribution
 
