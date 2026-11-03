@@ -39,13 +39,13 @@ The full process is in [`docs/process/`](docs/process/).
 
 ## Local setup
 
-You need [Godot 4.7.2](https://godotengine.org/download/) (standard build, on your PATH as `godot`), Python 3.10 or later, and [pre-commit](https://pre-commit.com/).
+You need [Godot 4.7.2](https://godotengine.org/download/) (standard build, on your PATH as `godot`), Python 3.10 or later, [pre-commit](https://pre-commit.com/) and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 pre-commit install
 ```
 
-This installs the commit hooks, including `gdformat` and `gdlint` for GDScript.
+This installs the commit hooks: `gdformat` and `gdlint` for GDScript, `ruff` and `pytest` for the Python analysis, and output stripping for notebooks.
 
 ```bash
 python tools/godot/install_gdunit4.py
@@ -59,7 +59,15 @@ python tools/godot/run_tests.py
 
 This runs every Godot test headless. Set `GODOT` to the Godot executable if it is not on your PATH. Open the project in the editor from `game/project.godot`.
 
-The Python analysis setup will be added here when it lands.
+The Python analysis lives in `analysis/` and is managed with uv, which fetches the pinned Python version itself:
+
+```bash
+cd analysis
+uv sync
+uv run pytest
+```
+
+This installs the analysis package and its development tools into `analysis/.venv/` and runs its tests. Format and lint with `uv run ruff format` and `uv run ruff check`.
 
 ## Conduct and security
 

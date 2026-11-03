@@ -26,8 +26,8 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 3. AI workflow and process docs: CLAUDE.md, agents, skills, workflow, standards (done: #7)
 4. Vision, design skeleton, roadmap and risks (done: #10)
 5. ADRs 0001 to 0004, the architecture overview and the docs index (done: merged in #10, reviewed in #12)
-6. Godot project skeleton, gdformat and gdlint, gdUnit4, a first test, and a CI lint-and-test job
-7. Python analysis skeleton (uv, ruff, pytest) and its CI job
+6. Godot project skeleton, gdformat and gdlint, gdUnit4, a first test, and a CI lint-and-test job (done: #19)
+7. Python analysis skeleton (uv, ruff, pytest) and its CI job (done: #22)
 8. A headless runner stub writing telemetry, a notebook reading it, and a CI smoke run
 9. Web export and GitHub Pages deploy: a grey-box valley with the dusk camera move
 10. All checks required, tag `v0.1.0`, devlog entry 1, the M0 review

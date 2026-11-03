@@ -26,9 +26,9 @@ Standards are enforced by tools wherever possible. Where a tool does not exist y
 
 ## Python (analysis)
 
-- Managed with `uv`. Python version pinned in `analysis/pyproject.toml` (added in M0, step 7).
+- Managed with `uv`. Python version pinned in `analysis/pyproject.toml`.
 - Type hints on public functions.
-- `ruff` for formatting and linting; `pytest` for tests (added in M0, step 7).
+- `ruff` for formatting and linting; `pytest` for tests.
 - Reads telemetry and writes models, reports and coefficient files. Never re-implements game rules.
 - Notebooks in `analysis/notebooks/` are exploratory only. Their outputs are stripped on commit, and anything worth keeping moves into `src/` with tests.
 
