@@ -1,6 +1,6 @@
 # ADR-0002: Keep one deterministic simulation, separate from rendering
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-03)
 - **Date:** 2026-11-03
 - **Related:** [ADR-0001](0001-engine-godot.md), [ADR-0003](0003-telemetry-format.md), [architecture overview](../architecture/overview.md)
 

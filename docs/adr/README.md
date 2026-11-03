@@ -14,6 +14,6 @@ An ADR records one significant or hard-to-reverse decision: the context, the opt
 | ADR | Title | Status |
 |---|---|---|
 | [0001](0001-engine-godot.md) | Use Godot 4 with typed GDScript | Accepted |
-| [0002](0002-sim-render-separation.md) | Keep one deterministic simulation, separate from rendering | Proposed |
-| [0003](0003-telemetry-format.md) | Telemetry as versioned JSON Lines, converted to Parquet for analysis | Proposed |
-| [0004](0004-architecture-documentation-c4.md) | Document the architecture with the C4 model in Mermaid | Proposed |
+| [0002](0002-sim-render-separation.md) | Keep one deterministic simulation, separate from rendering | Accepted |
+| [0003](0003-telemetry-format.md) | Telemetry as versioned JSON Lines, converted to Parquet for analysis | Accepted |
+| [0004](0004-architecture-documentation-c4.md) | Document the architecture with the C4 model in Mermaid | Accepted |

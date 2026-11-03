@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -98,10 +101,64 @@ class CommitTests(unittest.TestCase):
             problems = review.check(body(commit="abcdef1"), HEAD, BASE)
         self.assertTrue(any("base branch" in p for p in problems), problems)
 
-    def test_earlier_branch_commit_passes_with_a_warning(self) -> None:
-        with ancestry({"abcdef1"}, set()), mock.patch("builtins.print") as printed:
+    def test_edits_after_review_pass_with_a_warning(self) -> None:
+        with ancestry({"abcdef1"}, set()), mock.patch.object(
+            review, "files_added_or_removed", return_value=[]
+        ), mock.patch("builtins.print") as printed:
             self.assertEqual(review.check(body(commit="abcdef1"), HEAD, BASE), [])
         self.assertIn("::warning", printed.call_args.args[0])
+
+    def test_files_added_after_review_fail(self) -> None:
+        with ancestry({"abcdef1"}, set()), mock.patch.object(
+            review, "files_added_or_removed", return_value=["A docs/adr/0002.md"]
+        ):
+            problems = review.check(body(commit="abcdef1"), HEAD, BASE)
+        self.assertTrue(any("docs/adr/0002.md" in p for p in problems), problems)
+
+
+class GitTests(unittest.TestCase):
+    """Run the git helpers against a real throwaway repository."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        self.addCleanup(os.chdir, self.cwd)
+        self.git("init", "-q")
+        self.git("config", "user.email", "test@example.com")
+        self.git("config", "user.name", "Test")
+        Path("a.md").write_text("one\n", encoding="utf-8")
+        self.first = self.commit("first")
+
+    def git(self, *args: str) -> str:
+        return subprocess.run(
+            ["git", *args], capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    def commit(self, message: str) -> str:
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", message)
+        return self.git("rev-parse", "HEAD")
+
+    def test_edit_only_reports_nothing(self) -> None:
+        Path("a.md").write_text("two\n", encoding="utf-8")
+        head = self.commit("edit")
+        self.assertEqual(review.files_added_or_removed(self.first, head), [])
+
+    def test_added_and_removed_files_are_reported(self) -> None:
+        Path("b.md").write_text("new\n", encoding="utf-8")
+        Path("a.md").unlink()
+        head = self.commit("add and remove")
+        self.assertEqual(
+            sorted(review.files_added_or_removed(self.first, head)), ["A b.md", "D a.md"]
+        )
+
+    def test_ancestry_uses_real_history(self) -> None:
+        Path("a.md").write_text("two\n", encoding="utf-8")
+        head = self.commit("edit")
+        self.assertTrue(review.is_ancestor(self.first, head))
+        self.assertFalse(review.is_ancestor(head, self.first))
 
 
 class MainTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 # ADR-0003: Telemetry as versioned JSON Lines, converted to Parquet for analysis
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-03)
 - **Date:** 2026-11-03
 - **Related:** [ADR-0002](0002-sim-render-separation.md), [architecture overview](../architecture/overview.md)
 

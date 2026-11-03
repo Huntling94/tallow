@@ -13,7 +13,7 @@ Simulation first, then the 3D defence, then everything that makes it a town. Eac
 | **M6 Town walk** | Your house, shops, the exchange floor, rumours | Does walking change a decision? |
 | **M7 Depth** | Survey office, evolving herds, a second species, unlocks, generated valleys, modifiers | Is the tenth run as interesting as the third? |
 
-One simulation only: the authoritative simulation runs inside Godot, headless when needed, and exports telemetry. Python analyses and fits models; it does not duplicate the rules. See ADR-0002 (simulation separate from rendering).
+One simulation only: the authoritative simulation runs inside Godot, headless when needed, and exports telemetry. Python analyses and fits models; it does not duplicate the rules. See [ADR-0002](../adr/0002-sim-render-separation.md).
 
 ## M0: Foundations
 

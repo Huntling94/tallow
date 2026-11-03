@@ -9,7 +9,9 @@ Reads the PR body from the PR_BODY environment variable. Fails when:
   - the reviewed commit is not one of this pull request's own commits: it must
     be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA).
 
-Warns, without failing, when the reviewed commit is not the latest one.
+  - files were added, removed or renamed after the reviewed commit.
+
+Warns, without failing, when later commits only edit files the review covered.
 
 This is a plain text check. It confirms the review was recorded, not that it
 was good: judging that is the maintainer's job at merge.
@@ -67,6 +69,17 @@ def is_ancestor(sha: str, of: str) -> bool:
     return result.returncode == 0
 
 
+def files_added_or_removed(sha: str, head: str) -> list[str]:
+    """Return files added, removed or renamed between two commits, as "A path" or "D path"."""
+    result = subprocess.run(
+        ["git", "diff", "--name-status", "--no-renames", "--diff-filter=AD", sha, head],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [" ".join(line.split("\t", 1)) for line in result.stdout.splitlines() if line]
+
+
 def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[str]:
     """Return a list of problems; empty means the check passes."""
     raw = extract_section(body.replace("\r\n", "\n"), SECTION)
@@ -97,10 +110,17 @@ def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[
                 "so it is not this pull request's change."
             )
         elif not head_sha.lower().startswith(sha.lower()):
-            print(
-                f"::warning title=Independent review::The review covers {sha}, not the "
-                f"latest commit {head_sha[:7]}. Re-run it if the changes since are significant."
-            )
+            changed = files_added_or_removed(sha, head_sha)
+            if changed:
+                problems.append(
+                    f"Files were added or removed after the reviewed commit {sha}, so the "
+                    f"review does not cover them: {', '.join(changed)}. Re-run the review."
+                )
+            else:
+                print(
+                    f"::warning title=Independent review::The review covers {sha}, not the "
+                    f"latest commit {head_sha[:7]}. Re-run it if the changes since are significant."
+                )
 
     return problems
 

@@ -1,6 +1,6 @@
 # ADR-0004: Document the architecture with the C4 model in Mermaid
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-03)
 - **Date:** 2026-11-03
 - **Related:** [architecture overview](../architecture/overview.md)
 

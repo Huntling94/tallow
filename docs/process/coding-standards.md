@@ -50,3 +50,5 @@ Standards are enforced by tools wherever possible. Where a tool does not exist y
 ## Commits
 
 Conventional Commits: `type(scope): summary` in the imperative, under 72 characters. Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `perf`, `build`, `ci`. PRs are squash-merged, so the PR title becomes the commit on `main`.
+
+Stage files by name, never a whole folder, and check `git diff --cached --stat` before every commit, so only the intended files go in.
