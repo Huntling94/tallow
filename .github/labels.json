@@ -1,0 +1,32 @@
+[
+  {"name": "type: feature", "color": "1d76db", "description": "Something new"},
+  {"name": "type: bug", "color": "d73a4a", "description": "Something does not work as it should"},
+  {"name": "type: prototype", "color": "c5def5", "description": "Timeboxed, throwaway experiment"},
+  {"name": "type: balance", "color": "fbca04", "description": "Numbers, tuning or a dominant strategy"},
+  {"name": "type: chore", "color": "cfd3d7", "description": "Tooling, CI, refactoring or upkeep"},
+  {"name": "type: docs", "color": "0075ca", "description": "Documentation only"},
+
+  {"name": "system: herd", "color": "8b5a2b", "description": "Beasts, herd behaviour and evolution"},
+  {"name": "system: routes", "color": "8b5a2b", "description": "Route choice and flow fields"},
+  {"name": "system: defence", "color": "8b5a2b", "description": "Fences, pits, towers, walls and gates"},
+  {"name": "system: economy", "color": "8b5a2b", "description": "Harvest, exchange, prices and storage"},
+  {"name": "system: town", "color": "8b5a2b", "description": "Buildings, districts, damage and the Lamphouse"},
+  {"name": "system: garrison", "color": "8b5a2b", "description": "Standing army and militia"},
+  {"name": "system: almanac", "color": "8b5a2b", "description": "Forecasts and their scoring"},
+  {"name": "system: run", "color": "8b5a2b", "description": "Seasons, win, loss, score and unlocks"},
+  {"name": "system: world", "color": "5319e7", "description": "3D presentation of the simulation"},
+  {"name": "system: camera", "color": "5319e7", "description": "Command view and first-person camera"},
+  {"name": "system: first-person", "color": "5319e7", "description": "Walking the town and the wall"},
+  {"name": "system: ui", "color": "5319e7", "description": "Menus, HUD and the Godot theme"},
+  {"name": "system: telemetry", "color": "0e8a16", "description": "Events written by the simulation"},
+  {"name": "system: analysis", "color": "0e8a16", "description": "Python modelling and calibration"},
+  {"name": "system: ci", "color": "0e8a16", "description": "Workflows, checks, builds and releases"},
+
+  {"name": "priority: p1", "color": "b60205", "description": "Needed for the current milestone"},
+  {"name": "priority: p2", "color": "e99695", "description": "Wanted for the current milestone"},
+  {"name": "priority: p3", "color": "f9d0c4", "description": "Nice to have"},
+
+  {"name": "status: needs-spec", "color": "ededed", "description": "Waiting for an approved spec"},
+  {"name": "status: ready", "color": "0e8a16", "description": "Spec approved; ready to plan and build"},
+  {"name": "status: blocked", "color": "000000", "description": "Waiting on something else"}
+]

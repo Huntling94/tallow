@@ -1,0 +1,52 @@
+name: Bug
+description: Something that does not work as it should.
+title: "fix: "
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a run on seed ...
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Where
+      options:
+        - Web build
+        - Windows desktop
+        - Headless runner or CI
+        - Analysis (Python)
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Version tag, commit SHA or the date of the web build.
+  - type: input
+    id: seed
+    attributes:
+      label: Seed
+      description: The run seed, if known. Seeded runs can be replayed exactly.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      render: text

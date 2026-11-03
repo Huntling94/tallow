@@ -1,5 +1,7 @@
 # Run `pre-commit install` once after cloning to enable these hooks.
 default_install_hook_types: [pre-commit, commit-msg]
+# Hooks without their own stages run on commit only, not on commit messages.
+default_stages: [pre-commit, pre-push, manual]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
