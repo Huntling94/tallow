@@ -4,7 +4,7 @@
 
 ## What we set out to do
 
-Land the foundations as small pull requests, each independently reviewed by a fresh-context reviewer agent, with a CI check that the review is recorded. Four documentation packs were drafted up front and sat uncommitted in the working folder.
+Land the foundations as small pull requests, each independently reviewed by a fresh-context reviewer agent, with a CI check that the review is recorded. Four documentation packs sat drafted but uncommitted in the working folder.
 
 ## What happened
 
@@ -37,7 +37,7 @@ The catch-up (#12) took three review rounds, and each found something real:
 - **Coding standards:** stage files by name and run `git diff --cached --stat` before every commit.
 - **#10 carries a correction** pointing to #11 and #12.
 
-The lesson for an AI-assisted workflow: checks that warn rely on someone reading the warning with fresh eyes, and the AI that made the change is the worst-placed reader. Make the important ones fail.
+The lesson: checks that warn rely on someone reading the warning with fresh eyes, and the AI that made the change is the worst-placed reader. Make the important ones fail.
 
 ## Links
 
