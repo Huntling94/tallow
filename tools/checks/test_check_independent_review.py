@@ -255,6 +255,7 @@ class IsolationTests(unittest.TestCase):
                 suite.run(result)
             self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
             self.assertEqual((decoy / ".git" / "config").read_text(encoding="utf-8"), before)
+            self.assertFalse((decoy / ".git" / "index").exists(), "the decoy's staging area was used")
 
 
 if __name__ == "__main__":

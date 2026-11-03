@@ -4,8 +4,9 @@ name: review-check
 # A plain text check, no AI. See tools/checks/check_independent_review.py.
 #
 # The script is taken from the base branch, not the pull request, so a pull
-# request cannot loosen the check that judges it. A change to the script
-# takes effect for the pull requests that come after it merges.
+# request cannot loosen the check by editing the script. A change to the
+# script takes effect for the pull requests that come after it merges.
+# (This workflow file itself still runs from the pull request; see #17.)
 
 on:
   pull_request:

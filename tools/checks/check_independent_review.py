@@ -7,8 +7,8 @@ Reads the PR body from the PR_BODY environment variable. Fails when:
   - the verdict is not "Pass" or "Pass with notes";
   - the findings are empty (write "None" when there were none);
   - the reviewed commit is not one of this pull request's own commits: it must
-    be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA).
-
+    be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA);
+  - PR_HEAD_SHA is set but PR_BASE_SHA is not, so the commit checks cannot run;
   - commits after the reviewed commit touch any file the review did not cover
     (one that is not in the diff from the base to the reviewed commit).
 
