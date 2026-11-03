@@ -53,7 +53,7 @@ Use built-in plan mode for gate 2.
 ## Layout
 
 ```text
-docs/            vision, design, architecture, ADRs, specs, milestones, devlog, process
+docs/            vision, design, architecture, ADRs, specs, models, prototypes, playtests, milestones, devlog, process
 game/            Godot 4 project (lands in M0); simulation in game/src/sim/
 analysis/        Python analysis with uv (lands in M0)
 prototypes/      throwaway, timeboxed experiments

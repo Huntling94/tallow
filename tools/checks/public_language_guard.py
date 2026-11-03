@@ -155,7 +155,8 @@ def run_hook(patterns: list[re.Pattern[str]]) -> int:
         event = json.load(sys.stdin)
     except json.JSONDecodeError:
         return EXIT_OK
-    file_path = (event.get("tool_input") or {}).get("file_path")
+    tool_input = event.get("tool_input") or {}
+    file_path = tool_input.get("file_path") or tool_input.get("notebook_path")
     if not file_path or not patterns:
         return EXIT_OK
     project = Path(os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or ".").resolve()
