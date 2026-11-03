@@ -14,7 +14,7 @@ body:
     id: pillar
     attributes:
       label: Pillar served
-      description: Which design pillar does this serve?
+      description: Which design pillar does this serve? See docs/vision/pillars.md.
       options:
         - Steer the herd
         - Read the odds

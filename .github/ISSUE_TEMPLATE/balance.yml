@@ -21,7 +21,7 @@ body:
     id: target
     attributes:
       label: Balance target affected
-      description: The target or design rule this touches, if known.
+      description: The target or design rule this touches, if known (see docs/design/gdd.md, section 16).
   - type: textarea
     id: proposal
     attributes:
