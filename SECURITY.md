@@ -12,7 +12,7 @@ Please do not open a public issue for a security problem. Report it privately th
 2. Choose **Report a vulnerability**.
 3. Describe the problem, how to reproduce it, and what it could affect.
 
-Tallow is maintained by one person in their own time. We aim to acknowledge a report within 7 days and will keep you updated as we work on it. We will credit you in the release notes unless you would rather not be named.
+Tallow is maintained by one person. We aim to acknowledge a report within 7 days and will keep you updated as we work on it. We will credit you in the release notes unless you would rather not be named.
 
 ## Scope
 

@@ -27,12 +27,9 @@ This applies in all project spaces (issues, pull requests, discussions and any o
 
 ## Reporting
 
-Report unacceptable behaviour through GitHub, which keeps your report private:
+Report unacceptable behaviour privately to GitHub: open the **...** menu on the comment, issue or pull request, or go to the person's profile, and choose **Report abuse**. GitHub's safety team reviews every report, and your identity is not shared with the person you report.
 
-- **For a comment, issue or pull request in this repository:** open its **...** menu and choose **Report content**, then **Report to repository admins**. The report goes privately to the maintainer.
-- **For anything else, or if the problem involves the maintainer:** use **Report abuse** on the content or the person's profile. This goes to GitHub's own safety team.
-
-Every report to the maintainer will be reviewed and handled promptly and fairly, and the reporter's privacy will be respected.
+The maintainer also moderates the project directly, by hiding or removing content, locking conversations and blocking accounts that break this code.
 
 ## Enforcement
 
