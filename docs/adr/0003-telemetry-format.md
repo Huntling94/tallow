@@ -42,10 +42,10 @@ The simulation emits events (herd arrives, route chosen, beast killed, harvest r
 
 ## Format
 
-- **First line: a run header.** `type: "run_start"`, `schema_version`, `run_id`, `seed`, game version, and the run's settings (valley, herd personality, modifier, bot strategy).
+- **First line: a run header.** `type: "run_start"`, `schema_version`, `run_id`, `seed`, and the run's settings (valley, herd personality, modifier, bot strategy). `run_id` is derived from the seed and the settings, never random, so the same run always gets the same id.
 - **Then one event per line**, each with: `schema_version`, `run_id`, `season`, `tick`, `seq` (a counter that orders events within a tick), `type`, and the event's own fields.
 - **Last line: a run summary** (`type: "run_end"`): outcome, score and season count. A file without one is an incomplete run.
-- **No wall-clock times in events.** Times are the simulation's own season and tick, so the same seed gives byte-identical files. When and where a run happened goes in a separate manifest next to the file, which golden tests ignore.
+- **No wall-clock times in events.** Times are the simulation's own season and tick, so the same seed gives byte-identical files. When and where a run happened, and the game version that produced it, go in a separate manifest next to the file, which golden tests ignore. A change to the rules changes the output on purpose, and the golden files are updated in the same pull request, as for any golden test.
 - **Versioning:** `schema_version` is a whole number. Adding an optional field does not change it; renaming, removing or changing the meaning of a field does, and the change is recorded in the data dictionary.
 - **Location:** headless runs write to `telemetry/` (git-ignored). Small sample files for tests live in `analysis/fixtures/`.
 
@@ -55,7 +55,7 @@ The simulation emits events (herd arrives, route chosen, beast killed, harvest r
 - **Harder:** a schema and a data dictionary must be kept in step with the code; large bot runs produce large files before conversion.
 - **What we now have to do:**
   - A telemetry writer outside `game/src/sim/` that takes events from the simulation and writes JSON Lines (M0, step 8).
-  - A telemetry data dictionary in `docs/architecture/telemetry.md`, with every event and field, its type and the version it arrived in (M1).
+  - A telemetry data dictionary in `docs/architecture/telemetry.md`, with every event and field, its type, and the game version it arrived in (M1).
   - A Python loader that validates files against the schema, rejects unknown versions loudly, and writes Parquet.
   - Compress large bot-run files (gzip) if size becomes a problem.
 - **Revisit if:** writing JSON becomes a measurable cost in bot runs, or files grow too large to handle.

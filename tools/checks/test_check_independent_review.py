@@ -103,14 +103,14 @@ class CommitTests(unittest.TestCase):
 
     def test_edits_after_review_pass_with_a_warning(self) -> None:
         with ancestry({"abcdef1"}, set()), mock.patch.object(
-            review, "files_added_or_removed", return_value=[]
+            review, "unreviewed_paths", return_value=[]
         ), mock.patch("builtins.print") as printed:
             self.assertEqual(review.check(body(commit="abcdef1"), HEAD, BASE), [])
         self.assertIn("::warning", printed.call_args.args[0])
 
-    def test_files_added_after_review_fail(self) -> None:
+    def test_unreviewed_files_after_review_fail(self) -> None:
         with ancestry({"abcdef1"}, set()), mock.patch.object(
-            review, "files_added_or_removed", return_value=["A docs/adr/0002.md"]
+            review, "unreviewed_paths", return_value=["docs/adr/0002.md"]
         ):
             problems = review.check(body(commit="abcdef1"), HEAD, BASE)
         self.assertTrue(any("docs/adr/0002.md" in p for p in problems), problems)
@@ -141,17 +141,32 @@ class GitTests(unittest.TestCase):
         self.git("commit", "-q", "-m", message)
         return self.git("rev-parse", "HEAD")
 
-    def test_edit_only_reports_nothing(self) -> None:
-        Path("a.md").write_text("two\n", encoding="utf-8")
-        head = self.commit("edit")
-        self.assertEqual(review.files_added_or_removed(self.first, head), [])
+    def reviewed_edit_of_a(self) -> str:
+        """Add b.md on the base, then make a reviewed commit that edits only a.md."""
+        Path("b.md").write_text("base\n", encoding="utf-8")
+        self.base = self.commit("base")
+        Path("a.md").write_text("reviewed\n", encoding="utf-8")
+        return self.commit("reviewed")
 
-    def test_added_and_removed_files_are_reported(self) -> None:
-        Path("b.md").write_text("new\n", encoding="utf-8")
-        Path("a.md").unlink()
-        head = self.commit("add and remove")
+    def test_later_edit_to_a_reviewed_file_is_covered(self) -> None:
+        reviewed = self.reviewed_edit_of_a()
+        Path("a.md").write_text("fixed\n", encoding="utf-8")
+        head = self.commit("fix")
+        self.assertEqual(review.unreviewed_paths(self.base, reviewed, head), [])
+
+    def test_later_edit_to_an_unreviewed_file_is_reported(self) -> None:
+        reviewed = self.reviewed_edit_of_a()
+        Path("b.md").write_text("slipped in\n", encoding="utf-8")
+        head = self.commit("edit b")
+        self.assertEqual(review.unreviewed_paths(self.base, reviewed, head), ["b.md"])
+
+    def test_new_and_renamed_files_are_reported(self) -> None:
+        reviewed = self.reviewed_edit_of_a()
+        Path("c.md").write_text("new\n", encoding="utf-8")
+        Path("b.md").rename("d.md")
+        head = self.commit("add and rename")
         self.assertEqual(
-            sorted(review.files_added_or_removed(self.first, head)), ["A b.md", "D a.md"]
+            review.unreviewed_paths(self.base, reviewed, head), ["b.md", "c.md", "d.md"]
         )
 
     def test_ancestry_uses_real_history(self) -> None:

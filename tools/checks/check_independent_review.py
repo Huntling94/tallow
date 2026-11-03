@@ -9,9 +9,10 @@ Reads the PR body from the PR_BODY environment variable. Fails when:
   - the reviewed commit is not one of this pull request's own commits: it must
     be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA).
 
-  - files were added, removed or renamed after the reviewed commit.
+  - commits after the reviewed commit touch any file the review did not cover
+    (one that is not in the diff from the base to the reviewed commit).
 
-Warns, without failing, when later commits only edit files the review covered.
+Warns, without failing, when later commits only touch files the review covered.
 
 This is a plain text check. It confirms the review was recorded, not that it
 was good: judging that is the maintainer's job at merge.
@@ -69,15 +70,20 @@ def is_ancestor(sha: str, of: str) -> bool:
     return result.returncode == 0
 
 
-def files_added_or_removed(sha: str, head: str) -> list[str]:
-    """Return files added, removed or renamed between two commits, as "A path" or "D path"."""
+def changed_paths(start: str, end: str) -> set[str]:
+    """Return every path that differs between two commits (a rename counts as both paths)."""
     result = subprocess.run(
-        ["git", "diff", "--name-status", "--no-renames", "--diff-filter=AD", sha, head],
+        ["git", "diff", "--name-only", "--no-renames", start, end],
         capture_output=True,
         text=True,
         check=True,
     )
-    return [" ".join(line.split("\t", 1)) for line in result.stdout.splitlines() if line]
+    return {line for line in result.stdout.splitlines() if line}
+
+
+def unreviewed_paths(base: str, reviewed: str, head: str) -> list[str]:
+    """Return paths changed after the review that the reviewed diff did not include."""
+    return sorted(changed_paths(reviewed, head) - changed_paths(base, reviewed))
 
 
 def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[str]:
@@ -110,11 +116,11 @@ def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[
                 "so it is not this pull request's change."
             )
         elif not head_sha.lower().startswith(sha.lower()):
-            changed = files_added_or_removed(sha, head_sha)
-            if changed:
+            unreviewed = unreviewed_paths(base_sha, sha, head_sha) if base_sha else []
+            if unreviewed:
                 problems.append(
-                    f"Files were added or removed after the reviewed commit {sha}, so the "
-                    f"review does not cover them: {', '.join(changed)}. Re-run the review."
+                    f"Commits after the reviewed commit {sha} touch files the review did "
+                    f"not cover: {', '.join(unreviewed)}. Re-run the review."
                 )
             else:
                 print(
