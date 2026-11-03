@@ -2,6 +2,11 @@ name: review-check
 
 # Fails a pull request whose "Independent review" section is not filled in.
 # A plain text check, no AI. See tools/checks/check_independent_review.py.
+#
+# The script is taken from the base branch, not the pull request, so a pull
+# request cannot loosen the check by editing the script. A change to the
+# script takes effect for the pull requests that come after it merges.
+# (This workflow file itself still runs from the pull request; see #17.)
 
 on:
   pull_request:
@@ -24,10 +29,17 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Take the check script from the base branch
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git show "$PR_BASE_SHA:tools/checks/check_independent_review.py" \
+            > "$RUNNER_TEMP/check_independent_review.py"
+
       - name: Check the Independent review section
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-        run: python tools/checks/check_independent_review.py
+        run: python "$RUNNER_TEMP/check_independent_review.py"

@@ -7,8 +7,8 @@ Reads the PR body from the PR_BODY environment variable. Fails when:
   - the verdict is not "Pass" or "Pass with notes";
   - the findings are empty (write "None" when there were none);
   - the reviewed commit is not one of this pull request's own commits: it must
-    be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA).
-
+    be on the branch (PR_HEAD_SHA) and not already on the base (PR_BASE_SHA);
+  - PR_HEAD_SHA is set but PR_BASE_SHA is not, so the commit checks cannot run;
   - commits after the reviewed commit touch any file the review did not cover
     (one that is not in the diff from the base to the reviewed commit).
 
@@ -115,15 +115,20 @@ def check(body: str, head_sha: str | None, base_sha: str | None = None) -> list[
     if sha and not SHA.match(sha):
         problems.append(f'"Reviewed commit" should be a commit SHA, not "{sha}".')
     elif sha and head_sha:
-        if not is_ancestor(sha, head_sha):
+        if not base_sha:
+            problems.append(
+                "PR_BASE_SHA is not set, so the check cannot tell which commits belong "
+                "to this pull request."
+            )
+        elif not is_ancestor(sha, head_sha):
             problems.append(f"Reviewed commit {sha} is not on this branch.")
-        elif base_sha and is_ancestor(sha, base_sha):
+        elif is_ancestor(sha, base_sha):
             problems.append(
                 f"Reviewed commit {sha} is already on the base branch, "
                 "so it is not this pull request's change."
             )
         elif not head_sha.lower().startswith(sha.lower()):
-            unreviewed = unreviewed_paths(base_sha, sha, head_sha) if base_sha else []
+            unreviewed = unreviewed_paths(base_sha, sha, head_sha)
             if unreviewed:
                 problems.append(
                     f"Commits after the reviewed commit {sha} touch files the review did "
