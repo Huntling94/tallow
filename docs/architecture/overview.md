@@ -19,7 +19,7 @@ This page follows the [C4 model](https://c4model.com/) ([ADR-0004](../adr/0004-a
 | Deployment | Where does each container run? | [6](#6-deployment-view) |
 | Data flow | How does telemetry become a model the game uses? | [7](#7-the-statistical-loop) |
 
-**Notation used in every diagram.** Each box shows its name, its type in square brackets (person, software system, container, component) with the technology, and a one-line responsibility. Arrows are labelled with what flows and, where it matters, how. Dashed boxes are external to Tallow.
+**Notation used in every diagram.** Each box shows its name, its type in square brackets with the technology, and a one-line responsibility. The C4 types are person, software system, container, component and data store; the deployment and data-flow views also use device, CI job, CI test and check result. Arrows are labelled with what flows and, where it matters, how. Dashed boxes and outlines are external to Tallow; dashed arrows are planned links. The same element keeps the same name in every view.
 
 ## 1. System context
 
@@ -98,7 +98,7 @@ The game client and the headless runner share the same simulation code ([ADR-000
 
 ```mermaid
 flowchart TB
-    data[("<b>Game data</b><br/>[Data store: versioned JSON]")]
+    data[("<b>Game data</b><br/>[Data store: versioned JSON]<br/>Balance tables, true parameters,<br/>fitted coefficients")]
 
     subgraph pres["Presentation (game/src/world, camera, player, ui)"]
         input["<b>Input and UI</b><br/>[Component: GDScript, Godot UI]<br/>Turns player actions into commands"]
@@ -124,7 +124,7 @@ flowchart TB
     commands -- "validated commands, applied each tick" --> run
     run -- "advances each phase and tick" --> systems
     run -- "run seed" --> rng
-    rng -. "seeded random numbers" .-> systems
+    rng -- "seeded random numbers" --> systems
     systems -- "emit events" --> events
     systems -- "read-only state" --> world
     world -- "scene to frame" --> camera
@@ -158,7 +158,9 @@ sequenceDiagram
     end
     P->>S: Commands: assign harvest crews
     S->>S: Harvest: crews recover what they can before spoilage
+    S-->>T: Events (harvest recovered)
     P->>S: Commands: sell, store, contract
+    S-->>T: Events (trade made, price moved)
     P->>S: Commands: spend on defences, harvest capability, town, house and kit
     S-->>T: Season summary
 ```
@@ -199,10 +201,10 @@ flowchart LR
         export["<b>Export</b><br/>[CI job: Godot export templates]<br/>Web and desktop builds"]
     end
     subgraph pages["GitHub Pages [External: static hosting]"]
-        web["<b>Web build</b><br/>[Container: Godot Compatibility renderer]<br/>The easy-access version"]
+        web["<b>Game client: web build</b><br/>[Container: Godot Compatibility renderer]<br/>The easy-access version"]
     end
     subgraph releases["GitHub Releases [External: file hosting]"]
-        desktop["<b>Desktop builds</b><br/>[Container: Godot export]<br/>Attached to each version tag"]
+        desktop["<b>Game client: desktop builds</b><br/>[Container: Godot export]<br/>Attached to each version tag"]
     end
     browser["<b>Player's browser</b><br/>[Device]<br/>Runs the web build"]
     pc["<b>Player's desktop</b><br/>[Device: Windows, macOS, Linux]<br/>Runs a downloaded build"]
@@ -229,9 +231,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    truth[("<b>True parameters</b><br/>[Data store: versioned JSON, game/data]<br/>What the simulation really uses")] -- "loaded into" --> sim["<b>Simulation</b><br/>[Container: headless runner]<br/>Bots play many seeds"]
+    truth[("<b>Game data: true parameters</b><br/>[Data store: versioned JSON, game/data]<br/>What the simulation really uses")] -- "loaded into" --> sim["<b>Headless runner</b><br/>[Container: Godot 4 headless]<br/>Bots play many seeds"]
     sim -- "writes" --> tel[("<b>Telemetry</b><br/>[Data store: JSON Lines]<br/>What happened in each run")]
-    tel -- "read by" --> fit["<b>Fit model</b><br/>[Container: Python analysis]<br/>Never sees the true parameters"]
+    tel -- "read by" --> fit["<b>Analysis: fit model</b><br/>[Container: Python, uv]<br/>Never sees the true parameters"]
     fit -- "recovered values" --> check{"<b>Recovery test</b><br/>[CI test: Python]<br/>Recovered values match<br/>the truth within tolerance?"}
     truth -- "true values" --> check
     check -- "yes" --> ship[("<b>Published model</b><br/>[Data store: Markdown, JSON]<br/>Model card, calibration report,<br/>coefficients for the game")]
