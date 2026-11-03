@@ -23,6 +23,12 @@ repos:
         args: [--maxkb=1024]
       - id: detect-private-key
 
+  - repo: https://github.com/Scony/godot-gdscript-toolkit
+    rev: 4.5.0
+    hooks:
+      - id: gdformat
+      - id: gdlint
+
   - repo: local
     hooks:
       - id: public-language-guard

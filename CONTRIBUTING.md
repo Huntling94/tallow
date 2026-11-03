@@ -39,11 +39,27 @@ The full process is in [`docs/process/`](docs/process/).
 
 ## Local setup
 
+You need [Godot 4.7.2](https://godotengine.org/download/) (standard build, on your PATH as `godot`), Python 3.10 or later, and [pre-commit](https://pre-commit.com/).
+
 ```bash
 pre-commit install
 ```
 
-This installs the commit hooks. The Godot and Python setup steps will be added here as those parts of the project land.
+This installs the commit hooks, including `gdformat` and `gdlint` for GDScript.
+
+```bash
+python tools/godot/install_gdunit4.py
+```
+
+This fetches the gdUnit4 test framework (a pinned, checksum-checked version) into `game/addons/`. It is a development tool, so it is not committed.
+
+```bash
+python tools/godot/run_tests.py
+```
+
+This runs every Godot test headless. Set `GODOT` to the Godot executable if it is not on your PATH. Open the project in the editor from `game/project.godot`.
+
+The Python analysis setup will be added here when it lands.
 
 ## Conduct and security
 
