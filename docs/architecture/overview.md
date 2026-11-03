@@ -36,12 +36,12 @@ flowchart TB
     github["<b>GitHub</b><br/>[External system]<br/>Source, issues, CI (Actions),<br/>web hosting (Pages), releases"]
     itch["<b>itch.io</b><br/>[External system, planned]<br/>Desktop downloads"]
 
-    player -- "plays the web build" --> github
-    player -- "downloads desktop builds" --> itch
+    player -- "plays in a browser or on desktop" --> tallow
     maintainer -- "directs and approves work in" --> claude
     claude -- "reads and writes code and docs for" --> tallow
     maintainer -- "reviews, plays and merges" --> tallow
-    tallow -- "is built, tested and published by" --> github
+    tallow -- "is built, tested and hosted by" --> github
+    tallow -. "publishes desktop builds to (planned)" .-> itch
 
     classDef person fill:#08427b,color:#fff,stroke:#052e56
     classDef system fill:#1168bd,color:#fff,stroke:#0b4884
@@ -106,7 +106,7 @@ flowchart TB
         camera["<b>Cameras</b><br/>[Component: GDScript, Godot 3D]<br/>Command view and first person"]
     end
 
-    loader["<b>Data loader</b><br/>[Component: GDScript]<br/>Reads game data files and hands them<br/>to the simulation at the start of a run"]
+    loader["<b>Data loader</b><br/>[Component: GDScript, game/src/data]<br/>Reads game data files and hands them<br/>to the simulation at the start of a run"]
 
     subgraph sim["Simulation (game/src/sim: pure, seeded, deterministic)"]
         commands["<b>Command queue</b><br/>[Component: GDScript]<br/>Applies commands at tick boundaries"]
@@ -123,6 +123,7 @@ flowchart TB
     input -- "commands (build, assign crews, sell)" --> commands
     commands -- "validated commands, applied each tick" --> run
     run -- "advances each phase and tick" --> systems
+    run -- "run seed" --> rng
     rng -. "seeded random numbers" .-> systems
     systems -- "emit events" --> events
     systems -- "read-only state" --> world
@@ -188,23 +189,23 @@ stateDiagram-v2
 ```mermaid
 flowchart LR
     subgraph dev["Maintainer's machine [Windows]"]
-        editor["<b>Godot editor and Claude Code</b><br/>[Godot 4, Claude Code]<br/>Builds and reviews changes"]
-        localpy["<b>Analysis</b><br/>[Python, uv]<br/>Local model work"]
+        editor["<b>Godot editor and Claude Code</b><br/>[Container host: Godot 4, Claude Code]<br/>Builds and reviews changes"]
+        localpy["<b>Analysis</b><br/>[Container: Python, uv]<br/>Local model work"]
     end
-    subgraph gha["GitHub Actions [Linux runners]"]
-        checks["<b>Checks</b><br/>[Python, Godot headless]<br/>Language guard, review check,<br/>lint, tests, golden seeds"]
-        headless["<b>Headless runner</b><br/>[Godot 4 headless]<br/>Seeded bot runs"]
-        ci_analysis["<b>Analysis</b><br/>[Python, uv]<br/>Model checks on run telemetry"]
-        export["<b>Export</b><br/>[Godot export templates]<br/>Web and desktop builds"]
+    subgraph gha["GitHub Actions [External: Linux runners]"]
+        checks["<b>Checks</b><br/>[CI job: Python, Godot headless]<br/>Language guard, review check,<br/>lint, tests, golden seeds"]
+        headless["<b>Headless runner</b><br/>[Container: Godot 4 headless]<br/>Seeded bot runs"]
+        ci_analysis["<b>Analysis</b><br/>[Container: Python, uv]<br/>Model checks on run telemetry"]
+        export["<b>Export</b><br/>[CI job: Godot export templates]<br/>Web and desktop builds"]
     end
-    subgraph pages["GitHub Pages"]
-        web["<b>Web build</b><br/>[Godot Compatibility renderer]<br/>The easy-access version"]
+    subgraph pages["GitHub Pages [External: static hosting]"]
+        web["<b>Web build</b><br/>[Container: Godot Compatibility renderer]<br/>The easy-access version"]
     end
-    subgraph releases["GitHub Releases"]
-        desktop["<b>Desktop builds</b><br/>[Godot export]<br/>Attached to each version tag"]
+    subgraph releases["GitHub Releases [External: file hosting]"]
+        desktop["<b>Desktop builds</b><br/>[Container: Godot export]<br/>Attached to each version tag"]
     end
-    browser["<b>Player's browser</b>"]
-    pc["<b>Player's desktop</b>"]
+    browser["<b>Player's browser</b><br/>[Device]<br/>Runs the web build"]
+    pc["<b>Player's desktop</b><br/>[Device: Windows, macOS, Linux]<br/>Runs a downloaded build"]
 
     dev -- "pushes a branch and opens a pull request" --> gha
     headless -- "telemetry files" --> ci_analysis
@@ -212,6 +213,14 @@ flowchart LR
     export -- "attaches on version tag" --> desktop
     web -- "served over HTTPS" --> browser
     desktop -- "downloaded" --> pc
+
+    classDef container fill:#438dd5,color:#fff,stroke:#2e6295
+    classDef device fill:#08427b,color:#fff,stroke:#052e56
+    class editor,localpy,checks,headless,ci_analysis,export,web,desktop container
+    class browser,pc device
+    style gha stroke-dasharray:4 3
+    style pages stroke-dasharray:4 3
+    style releases stroke-dasharray:4 3
 ```
 
 ## 7. The statistical loop
@@ -220,13 +229,20 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    truth["<b>True parameters</b><br/>[versioned JSON, game/data]"] -- "loaded into" --> sim["<b>Simulation</b><br/>[headless runner]<br/>Bots play many seeds"]
-    sim -- "writes" --> tel["<b>Telemetry</b><br/>[JSON Lines]"]
-    tel -- "read by" --> fit["<b>Fit model</b><br/>[Python]<br/>Never sees the true parameters"]
-    fit -- "recovered values" --> check{"Recovered values<br/>match the truth<br/>within tolerance?"}
+    truth[("<b>True parameters</b><br/>[Data store: versioned JSON, game/data]<br/>What the simulation really uses")] -- "loaded into" --> sim["<b>Simulation</b><br/>[Container: headless runner]<br/>Bots play many seeds"]
+    sim -- "writes" --> tel[("<b>Telemetry</b><br/>[Data store: JSON Lines]<br/>What happened in each run")]
+    tel -- "read by" --> fit["<b>Fit model</b><br/>[Container: Python analysis]<br/>Never sees the true parameters"]
+    fit -- "recovered values" --> check{"<b>Recovery test</b><br/>[CI test: Python]<br/>Recovered values match<br/>the truth within tolerance?"}
     truth -- "true values" --> check
-    check -- "yes" --> ship["Model card, calibration report,<br/>coefficients shipped as JSON"]
-    check -- "no" --> fail["CI fails"]
+    check -- "yes" --> ship[("<b>Published model</b><br/>[Data store: Markdown, JSON]<br/>Model card, calibration report,<br/>coefficients for the game")]
+    check -- "no" --> fail["<b>CI fails</b><br/>[Check result]<br/>The pull request cannot merge"]
+
+    classDef container fill:#438dd5,color:#fff,stroke:#2e6295
+    classDef store fill:#438dd5,color:#fff,stroke:#2e6295
+    classDef test fill:#85bbf0,color:#000,stroke:#5d82a8
+    class sim,fit container
+    class truth,tel,ship store
+    class check,fail test
 ```
 
 Because the simulation knows the truth, every model in the repository can be checked against it.
@@ -238,7 +254,7 @@ Because the simulation knows the truth, every model in the repository can be che
 | Simulation | `game/src/sim/` | Owns every game rule and all game state. Advances in fixed ticks from commands and a seed. Emits events. | Touch scenes, nodes, rendering, input, files or the wall clock. Use unseeded randomness. |
 | Presentation | `game/src/world/`, `camera/`, `player/`, `ui/` | Shows simulation state in 3D, animates between ticks, turns player input into commands. | Change simulation state directly. |
 | Headless runner | `game/tools/` | Runs seeded seasons with bots and no window. | Contain rules of its own. |
-| Data loader | outside `game/src/sim/` | Reads game data files and passes the values to the simulation at the start of a run. | Hold or change game state. |
+| Data loader | `game/src/data/` | Reads game data files and passes the values to the simulation at the start of a run. | Hold or change game state. |
 | Telemetry writer | `game/src/telemetry/` | Turns simulation events into JSON Lines files. | Decide what happens in the game. |
 | Data | `game/data/` | Balance tables and fitted coefficients, versioned. | Contain logic. |
 | Analysis | `analysis/` | Validates telemetry, fits and calibrates models, writes reports and coefficients. | Re-implement game rules. |
@@ -253,6 +269,7 @@ game/                    Godot 4 project
   src/player/            first-person controller and harpoon
   src/ui/                menus, HUD and theme
   src/telemetry/         telemetry writer
+  src/data/              data loader: reads game/data/ and passes values to the simulation
   scenes/                Godot scenes
   assets/                models, textures, audio, fonts (each listed in CREDITS.md)
   data/                  balance tables and fitted coefficients (versioned JSON)

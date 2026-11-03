@@ -38,11 +38,11 @@ The simulation emits events (herd arrives, route chosen, beast killed, harvest r
 
 ## Decision
 
-**Option 1.** The simulation writes **JSON Lines** (`.jsonl`), one file per run, with a schema version on every record. Python validates each file against the schema, then converts it to **Parquet** for analysis.
+**Option 1.** The game writes **JSON Lines**, through a telemetry writer outside the simulation, (`.jsonl`), one file per run, with a schema version on every record. Python validates each file against the schema, then converts it to **Parquet** for analysis.
 
 ## Format
 
-- **First line: a run header.** `type: "run_start"`, `schema_version`, `run_id`, `seed`, and the run's settings (valley, herd personality, modifier, bot strategy). `run_id` is derived from the seed and the settings, never random, so the same run always gets the same id.
+- **First line: a run header.** `type: "run_start"`, `schema_version`, `rules_version`, `run_id`, `seed`, and the run's settings (valley, herd personality, modifier, bot strategy). `rules_version` identifies the game rules and balance data, and changes whenever they do. `run_id` is derived from the rules version, the seed and the settings, never random, so the same run always gets the same id and runs from different rules never share one.
 - **Then one event per line**, each with: `schema_version`, `run_id`, `season`, `tick`, `seq` (a counter that orders events within a tick), `type`, and the event's own fields.
 - **Last line: a run summary** (`type: "run_end"`): outcome, score and season count. A file without one is an incomplete run.
 - **No wall-clock times in events.** Times are the simulation's own season and tick, so the same seed gives byte-identical files. When and where a run happened, and the game version that produced it, go in a separate manifest next to the file, which golden tests ignore. A change to the rules changes the output on purpose, and the golden files are updated in the same pull request, as for any golden test.

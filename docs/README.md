@@ -6,7 +6,7 @@ Everything about how Tallow is designed, built and decided lives here, reviewed 
 |---|---|---|
 | [`vision/`](vision/) | Concept, pillars and non-goals | Fixed after greenlight; non-goals living |
 | [`design/`](design/) | Game design document (GDD), run structure, balance targets, one page per system | Living |
-| [`architecture/`](architecture/) | Overview, simulation, telemetry data dictionary, testing strategy, diagrams | Living |
+| [`architecture/`](architecture/) | Overview; later a simulation page, the telemetry data dictionary and the testing strategy | Living |
 | [`adr/`](adr/) | Architecture decision records: one per significant decision | Fixed; superseded, never edited |
 | [`specs/`](specs/) | One spec per feature, numbered to match its issue | Fixed once approved |
 | `models/` | One model card per statistical model, with calibration reports | Versioned |

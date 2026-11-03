@@ -169,6 +169,39 @@ class GitTests(unittest.TestCase):
             review.unreviewed_paths(self.base, reviewed, head), ["b.md", "c.md", "d.md"]
         )
 
+    def test_base_moving_ahead_does_not_count_as_reviewed(self) -> None:
+        # main and the branch both start here, with a.md and b.md.
+        Path("b.md").write_text("base\n", encoding="utf-8")
+        self.commit("start")
+        start_branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
+        self.git("checkout", "-q", "-b", "feature")
+        Path("a.md").write_text("reviewed\n", encoding="utf-8")
+        reviewed = self.commit("reviewed edit of a")
+        # main moves ahead and edits b.md, which the review never saw.
+        self.git("checkout", "-q", start_branch)
+        Path("b.md").write_text("main changed\n", encoding="utf-8")
+        base = self.commit("main edits b")
+        # After the review, the branch edits b.md too.
+        self.git("checkout", "-q", "feature")
+        Path("b.md").write_text("branch changed\n", encoding="utf-8")
+        head = self.commit("branch edits b")
+        self.assertEqual(review.unreviewed_paths(base, reviewed, head), ["b.md"])
+
+    def test_merging_the_base_in_is_not_reported(self) -> None:
+        Path("b.md").write_text("base\n", encoding="utf-8")
+        self.commit("start")
+        start_branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
+        self.git("checkout", "-q", "-b", "feature")
+        Path("a.md").write_text("reviewed\n", encoding="utf-8")
+        reviewed = self.commit("reviewed edit of a")
+        self.git("checkout", "-q", start_branch)
+        Path("b.md").write_text("main changed\n", encoding="utf-8")
+        base = self.commit("main edits b")
+        self.git("checkout", "-q", "feature")
+        self.git("merge", "-q", "--no-edit", start_branch)
+        head = self.git("rev-parse", "HEAD")
+        self.assertEqual(review.unreviewed_paths(base, reviewed, head), [])
+
     def test_ancestry_uses_real_history(self) -> None:
         Path("a.md").write_text("two\n", encoding="utf-8")
         head = self.commit("edit")
