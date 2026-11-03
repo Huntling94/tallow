@@ -39,6 +39,11 @@ def body(
     )
 
 
+def environment_without_git() -> dict[str, str]:
+    """The current environment minus GIT_ variables, which a git hook would point at this repository."""
+    return {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+
+
 def ancestry(on_branch: set[str], on_base: set[str]):
     """Fake git ancestry: which short SHAs are on the branch and on the base."""
 
@@ -87,6 +92,10 @@ class SectionTests(unittest.TestCase):
 
 
 class CommitTests(unittest.TestCase):
+    def test_missing_base_fails_loudly(self) -> None:
+        problems = review.check(body(), HEAD)
+        self.assertTrue(any("PR_BASE_SHA" in p for p in problems), problems)
+
     def test_latest_commit_passes(self) -> None:
         with ancestry({"ccccccc"}, set()):
             self.assertEqual(review.check(body(), HEAD, BASE), [])
@@ -117,9 +126,17 @@ class CommitTests(unittest.TestCase):
 
 
 class GitTests(unittest.TestCase):
-    """Run the git helpers against a real throwaway repository."""
+    """Run the git helpers against a real throwaway repository.
+
+    Git hooks pass settings such as GIT_DIR and GIT_INDEX_FILE to the commands
+    they run. Inherited here, they would point these tests at the surrounding
+    repository, so every GIT_ variable is cleared first.
+    """
 
     def setUp(self) -> None:
+        isolate = mock.patch.dict(os.environ, environment_without_git(), clear=True)
+        isolate.start()
+        self.addCleanup(isolate.stop)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.cwd = os.getcwd()
@@ -220,6 +237,24 @@ class MainTests(unittest.TestCase):
             "builtins.print"
         ):
             self.assertEqual(review.main(), 1)
+
+
+class IsolationTests(unittest.TestCase):
+    def test_git_tests_leave_a_surrounding_repository_alone(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            decoy = Path(tmp)
+            subprocess.run(
+                ["git", "init", "-q", str(decoy)], check=True, env=environment_without_git()
+            )
+            decoy_git = str(decoy / ".git")
+            before = (decoy / ".git" / "config").read_text(encoding="utf-8")
+            env = {"GIT_DIR": decoy_git, "GIT_INDEX_FILE": str(decoy / ".git" / "index")}
+            with mock.patch.dict(os.environ, env):
+                suite = unittest.defaultTestLoader.loadTestsFromTestCase(GitTests)
+                result = unittest.TestResult()
+                suite.run(result)
+            self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
+            self.assertEqual((decoy / ".git" / "config").read_text(encoding="utf-8"), before)
 
 
 if __name__ == "__main__":
