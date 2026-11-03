@@ -1,6 +1,6 @@
 # Roadmap
 
-Simulation first, then the 3D defence, then everything that makes it a town. Each milestone answers one question. M2 to M5 together form the vertical slice.
+Simulation first, then the 3D defence, then everything that makes it a town. Each milestone answers one question. M2 to M6 together build the vertical slice described in the [concept](../vision/concept.md); the milestones go beyond it in places (five seasons in M2, a full 12-season run in M4).
 
 | Milestone | What gets built | The question it answers |
 |---|---|---|
@@ -35,7 +35,7 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 ### Exit criteria
 
 - `main` is protected, and every change after the first commit arrived by PR with green checks and the maintainer's explicit approval.
-- Every PR with code or doc changes carries a completed Independent review section, enforced by CI.
+- Every PR, except Dependabot's dependency updates, carries a completed Independent review section, enforced by CI.
 - The web build is live on GitHub Pages.
 - The headless runner writes telemetry that Python reads, with a test at each layer.
 - ADRs 0001 to 0004, the roadmap, the risk register and the process docs are merged.

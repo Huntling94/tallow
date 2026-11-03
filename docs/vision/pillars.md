@@ -1,6 +1,6 @@
 # Pillars
 
-Three pillars decide what goes in the game. Every feature issue names the pillar it serves. If a feature serves none, it does not go in.
+Three pillars decide what goes in the game. Every gameplay feature names the pillar it serves. If it serves none, it does not go in. Foundations work (tooling, pipeline, process) is exempt.
 
 ## 1. Steer the herd
 
