@@ -21,7 +21,7 @@ How a change gets from an idea to `main`. Every change after the first commit fo
 | 8. Merge and ship | On the maintainer's explicit approval, Claude squash merges to `main`. The web build deploys and the changelog updates (once those pipelines exist). | Claude, on approval | Updated `main` |
 | 9. Record | A devlog entry (`/devlog`) when something notable happened, especially an AI mistake and the check that caught it. | Claude drafts, maintainer approves | `docs/devlog/` entry |
 
-Steps 2 and 3 can be combined for small changes (chores, docs, single-file fixes): the PR description states what and why, and the maintainer's review covers both gates.
+Steps 2 and 3 can be combined for small changes (chores, docs, single-file fixes): the issue says what done looks like, the PR description states what and why, and the maintainer's review covers both gates.
 
 ## Two tracks
 
