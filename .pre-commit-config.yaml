@@ -1,0 +1,36 @@
+# Run `pre-commit install` once after cloning to enable these hooks.
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: \.(tscn|tres|import)$
+      - id: end-of-file-fixer
+        exclude: \.(tscn|tres|import)$
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: public-language-guard
+        name: public language guard (files)
+        entry: python tools/checks/public_language_guard.py files
+        language: python
+        types: [text]
+        stages: [pre-commit, pre-push, manual]
+      - id: public-language-guard-message
+        name: public language guard (commit message)
+        entry: python tools/checks/public_language_guard.py message
+        language: python
+        stages: [commit-msg]

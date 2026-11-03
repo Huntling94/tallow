@@ -1,0 +1,58 @@
+name: public-language
+
+# Fails if tracked files, file names, commit messages or pull request text
+# contain a term from the private blocked-term list (the TALLOW_BLOCKLIST
+# repository secret). See tools/checks/public_language_guard.py.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    env:
+      TALLOW_BLOCKLIST: ${{ secrets.TALLOW_BLOCKLIST }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Scan tracked files and file names
+        run: python tools/checks/public_language_guard.py files --all
+
+      - name: Scan pull request title and body
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n\n%s\n' "$PR_TITLE" "$PR_BODY" \
+            | python tools/checks/public_language_guard.py text --label "pull request"
+
+      - name: Scan commit messages
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            range="$PR_BASE..$PR_HEAD"
+          elif [ -z "$PUSH_BEFORE" ] || [ "$PUSH_BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            range="$PUSH_AFTER"
+          else
+            range="$PUSH_BEFORE..$PUSH_AFTER"
+          fi
+          git log --format='%B' "$range" \
+            | python tools/checks/public_language_guard.py text --label "commit messages"

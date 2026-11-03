@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# GDScript and shaders follow Godot's style: tabs.
+[*.{gd,gdshader}]
+indent_style = tab
+indent_size = 4
+
+# Files Godot writes itself: leave their formatting to the editor.
+[*.{tscn,tres,godot,import}]
+indent_style = unset
+trim_trailing_whitespace = unset
+insert_final_newline = unset
+
+[*.py]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
