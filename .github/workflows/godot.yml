@@ -1,0 +1,48 @@
+name: godot
+
+# Lints the GDScript and runs the Godot tests headless with gdUnit4.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+  GODOT_SHA512: 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Lint GDScript
+        run: |
+          pip install --quiet gdtoolkit==4.5.0
+          files=$(git ls-files 'game/*.gd')
+          if [ -z "$files" ]; then echo "No GDScript files"; exit 1; fi
+          gdformat --check $files
+          gdlint $files
+
+      - name: Install Godot
+        run: |
+          zip="Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -sSfL -o "$RUNNER_TEMP/$zip" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/$zip"
+          echo "${GODOT_SHA512}  $RUNNER_TEMP/$zip" | sha512sum --check
+          unzip -q "$RUNNER_TEMP/$zip" -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Install gdUnit4
+        run: python tools/godot/install_gdunit4.py
+
+      - name: Run tests
+        run: python tools/godot/run_tests.py

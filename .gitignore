@@ -36,3 +36,7 @@ CLAUDE.local.md
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Godot development tools fetched by tools/godot/ (not committed)
+/game/addons/gdUnit4/
+/game/reports/

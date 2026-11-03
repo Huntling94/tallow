@@ -1,0 +1,1 @@
+Not GDScript, so the scan skips it: Time.get_ticks_msec()
