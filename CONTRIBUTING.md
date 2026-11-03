@@ -24,7 +24,7 @@ Every change after the first commit arrives by pull request:
 7. **Maintainer review (gate 3: is it right and is it good).** The maintainer reads the review, plays the build and decides.
 8. **Merge.** Squash merge to `main`. The maintainer's merge is the approval.
 
-The full process is in [`docs/process/`](docs/process/).
+The full process documentation is being added during milestone M0.
 
 ## Standards
 

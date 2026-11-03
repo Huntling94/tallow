@@ -16,7 +16,7 @@ Tallow is maintained by one person in their own time. We aim to acknowledge a re
 
 ## Scope
 
-In scope: the game's code, the CI workflows, the web build on GitHub Pages and the release artefacts.
+In scope: the game's code and the CI workflows, and, once they exist, the web build on GitHub Pages and the release artefacts.
 
 Out of scope: third-party engines, libraries and assets (report those to their owners), and problems that need an already compromised machine.
 
