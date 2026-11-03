@@ -1,19 +1,26 @@
 class_name SimBoundary
 extends RefCounted
 ## Finds references that ADR-0002 forbids in simulation code (game/src/sim/):
-## scene, node and rendering types, the wall clock, unseeded randomness and
-## file or resource loading.
+## scene, node and resource types, scene access, engine servers, the wall
+## clock and frame counters, unseeded randomness, file access and input.
+##
+## Node and resource types are found by asking the engine (ClassDB), so every
+## Node or Resource subclass is caught without a list to maintain.
 
 const SIM_DIR := "res://src/sim"
 
 ## Each rule pairs a regular expression with the reason it is forbidden.
 const RULES: Array[Array] = [
-	[
-		"\\b(Node|Node2D|Node3D|Control|CanvasItem|Viewport|SceneTree)\\b",
-		"scene or node type",
-	],
 	["\\bget_tree\\s*\\(", "scene tree access"],
-	["\\b(MeshInstance3D|Camera3D|RenderingServer|Sprite2D|Sprite3D)\\b", "rendering"],
+	["\\bget_node(_or_null)?\\s*\\(", "scene access"],
+	['\\$[A-Za-z_"]', "scene access"],
+	["(?<![\\w%])%[A-Z]\\w*", "scene access"],
+	["@(onready|export)\\b", "scene access"],
+	["\\.instantiate\\s*\\(", "scene access"],
+	[
+		"\\b(RenderingServer|PhysicsServer2D|PhysicsServer3D|DisplayServer|AudioServer)\\b",
+		"engine server"
+	],
 	["\\bTime\\.", "wall-clock time"],
 	["\\bOS\\.get_ticks_", "wall-clock time"],
 	["\\bEngine\\.get_(physics|process)_frames\\b", "frame counter"],
@@ -27,14 +34,14 @@ const RULES: Array[Array] = [
 	],
 	# A generator's own randomize() reseeds it from the clock.
 	["\\.randomize\\s*\\(", "unseeded randomness"],
-	# A new generator starts from a random seed; use the one passed in.
-	["\\bRandomNumberGenerator\\.new\\s*\\(", "unseeded randomness"],
 	# Array.shuffle() and Array.pick_random() use the global generator.
 	["\\.(shuffle|pick_random)\\s*\\(", "unseeded randomness"],
 	["(?<![.\\w])(load|preload)\\s*\\(", "resource loading"],
 	["\\b(ResourceLoader|FileAccess|DirAccess)\\b", "file or resource access"],
 	["\\bInput\\.", "input"],
 ]
+
+const TYPE_NAME := "\\b[A-Z][A-Za-z0-9_]*\\b"
 
 
 ## Returns one "line N: reason" entry per forbidden reference in the source.
@@ -45,17 +52,21 @@ static func find_violations(source: String) -> PackedStringArray:
 	var compiled: Array[RegEx] = []
 	for rule: Array in RULES:
 		compiled.append(RegEx.create_from_string(rule[0]))
+	var type_name := RegEx.create_from_string(TYPE_NAME)
 	var lines := source.split("\n")
 	for index: int in lines.size():
 		var code := _strip_comment(lines[index])
 		for rule_index: int in compiled.size():
 			if compiled[rule_index].search(code) != null:
 				violations.append("line %d: %s" % [index + 1, RULES[rule_index][1]])
+		for found: RegExMatch in type_name.search_all(code):
+			var reason := _engine_type_reason(found.get_string())
+			if reason != "":
+				violations.append("line %d: %s %s" % [index + 1, reason, found.get_string()])
 	return violations
 
 
-## Scans every .gd file under the simulation folder. A missing folder has no
-## violations.
+## Scans every .gd file under a folder. Callers check the folder exists.
 static func scan_sim_folder(folder: String = SIM_DIR) -> PackedStringArray:
 	var violations := PackedStringArray()
 	for path: String in _gd_files(folder):
@@ -63,6 +74,18 @@ static func scan_sim_folder(folder: String = SIM_DIR) -> PackedStringArray:
 		for violation: String in find_violations(source):
 			violations.append("%s %s" % [path, violation])
 	return violations
+
+
+## "node type" or "resource type" for engine classes the simulation must not
+## use, otherwise "".
+static func _engine_type_reason(name: String) -> String:
+	if not ClassDB.class_exists(name):
+		return ""
+	if name == "Node" or ClassDB.is_parent_class(name, "Node"):
+		return "node type"
+	if name == "Resource" or ClassDB.is_parent_class(name, "Resource"):
+		return "resource type"
+	return ""
 
 
 static func _strip_comment(line: String) -> String:

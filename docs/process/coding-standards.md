@@ -18,7 +18,7 @@ Standards are enforced by tools wherever possible. Where a tool does not exist y
 - **Simulation code (`game/src/sim/`)** follows ADR-0002:
   - No `Node`, scene, resource-loading or rendering references. Plain classes (`RefCounted`) only.
   - No wall-clock time (`Time`, `OS.get_ticks_*`). Time is the simulation's own tick.
-  - No global randomness (`randi()`, `randf()`). Use the seeded `RandomNumberGenerator` passed in.
+  - No global randomness (`randi()`, `randf()`, `shuffle()`, `pick_random()`). Random generators are created only by the random-streams code, each seeded from the run seed; everything else uses the generator it is given.
   - Same seed and inputs give the same outputs, on every platform.
   - Emit telemetry events through the telemetry interface; never write files directly.
 - **Presentation code (`game/src/world/`, `game/src/camera/`, `game/src/player/`, `game/src/ui/`)** reads simulation state and sends commands; it never changes simulation state directly.

@@ -28,6 +28,7 @@ jobs:
         run: |
           pip install --quiet gdtoolkit==4.5.0
           files=$(git ls-files 'game/*.gd')
+          if [ -z "$files" ]; then echo "No GDScript files"; exit 1; fi
           gdformat --check $files
           gdlint $files
 
