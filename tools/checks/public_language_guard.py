@@ -61,7 +61,7 @@ def load_terms() -> list[str]:
     """Read terms from the environment variable, else from the local file."""
     raw = os.environ.get(ENV_TERMS, "")
     if not raw.strip():
-        path = Path(os.environ.get(ENV_FILE, DEFAULT_FILE)).expanduser()
+        path = Path(os.environ.get(ENV_FILE) or DEFAULT_FILE).expanduser()
         if not path.is_file():
             return []
         raw = path.read_text(encoding="utf-8")
