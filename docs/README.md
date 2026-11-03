@@ -13,7 +13,7 @@ Everything about how Tallow is designed, built and decided lives here, reviewed 
 | `prototypes/` | Prototype reports and the greenlight record | Fixed |
 | `playtests/` | Playtest plans and reports | Fixed |
 | [`milestones/`](milestones/) | Roadmap, risk register, one review per milestone | Living (reviews fixed) |
-| `devlog/` | The story of the build, including where AI got things wrong and what caught it | Append-only |
+| [`devlog/`](devlog/) | The story of the build, including where AI got things wrong and what caught it | Append-only |
 | [`process/`](process/) | How we work: workflow, definitions of ready and done, coding standards, AI collaboration | Living |
 
 Folders without a link do not exist yet; they appear as their first document lands.
