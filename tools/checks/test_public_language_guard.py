@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -19,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import public_language_guard as guard  # noqa: E402
 
 
-def patterns(*terms: str):
+def patterns(*terms: str) -> list[re.Pattern[str]]:
     return [guard.compile_term(term) for term in terms]
 
 
@@ -76,7 +77,7 @@ class HookTests(unittest.TestCase):
         self.file = self.project / "notes.md"
         self.file.write_text("a zebra here\n", encoding="utf-8")
 
-    def run_hook(self, tool_input: dict, terms=("zebra",)) -> int:
+    def run_hook(self, tool_input: dict[str, str], terms: tuple[str, ...] = ("zebra",)) -> int:
         event = io.StringIO(json.dumps({"tool_input": tool_input}))
         env = {"CLAUDE_PROJECT_DIR": str(self.project)}
         with mock.patch("sys.stdin", event), mock.patch.dict(os.environ, env), mock.patch(
