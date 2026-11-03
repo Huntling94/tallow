@@ -1,0 +1,35 @@
+name: Feature
+description: Something new for the game, its tools or its pipeline.
+title: "feat: "
+labels: ["type: feature", "status: needs-spec"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What and why
+      description: What should exist that does not, and what it gives the player or the project.
+    validations:
+      required: true
+  - type: dropdown
+    id: pillar
+    attributes:
+      label: Pillar served
+      description: Which design pillar does this serve?
+      options:
+        - Steer the herd
+        - Read the odds
+        - Live in what you built
+        - Foundations (tooling, pipeline, process)
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Draft acceptance criteria
+      description: How we will know it is done. These become testable criteria in the spec.
+      placeholder: |
+        - Given ..., when ..., then ...
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes, references or sketches

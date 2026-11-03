@@ -1,5 +1,7 @@
 # Run `pre-commit install` once after cloning to enable these hooks.
 default_install_hook_types: [pre-commit, commit-msg]
+# Hooks without their own stages run on commit only, not on commit messages.
+default_stages: [pre-commit, pre-push, manual]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -29,6 +31,12 @@ repos:
         language: python
         types: [text]
         stages: [pre-commit, pre-push, manual]
+      - id: tool-tests
+        name: tests for tools/checks
+        entry: python -m unittest discover -s tools/checks
+        language: python
+        files: ^tools/checks/
+        pass_filenames: false
       - id: public-language-guard-message
         name: public language guard (commit message)
         entry: python tools/checks/public_language_guard.py message

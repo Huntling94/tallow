@@ -1,0 +1,40 @@
+name: Prototype
+description: A timeboxed, throwaway experiment that answers one question.
+title: "proto: "
+labels: ["type: prototype"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prototypes skip the spec and plan gates and strict CI. They live in `prototypes/`, answer one question, and end with a report in `docs/prototypes/`: keep, kill or change.
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+      description: One question this prototype answers.
+    validations:
+      required: true
+  - type: dropdown
+    id: timebox
+    attributes:
+      label: Timebox
+      options:
+        - 1 day
+        - 2 days
+        - 3 days
+    validations:
+      required: true
+  - type: textarea
+    id: build
+    attributes:
+      label: What will be built
+      description: The least needed to answer the question.
+    validations:
+      required: true
+  - type: textarea
+    id: judge
+    attributes:
+      label: How we will judge it
+      description: What result means keep, kill or change.
+    validations:
+      required: true

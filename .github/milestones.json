@@ -1,0 +1,10 @@
+[
+  {"title": "M0 Foundations", "description": "Repo, process, CI, ADRs and a walking skeleton (grey-box valley, stub season writing telemetry, a notebook reading it). Question: does one real PR pass the whole loop end to end?"},
+  {"title": "M1 Simulation core", "description": "Headless season sim: herd, routes, three defences, harvest, one price; bots play 10,000 seasons; first route model recovers the true parameters. Question: does committing under uncertainty create interesting choices, and is there a dominant strategy?"},
+  {"title": "M2 Bare 3D defence", "description": "One valley, one beast, fence, pit and harpoon tower, command view, five seasons, grey boxes. Question: is one night fun to watch and fiddle with?"},
+  {"title": "M3 Economy", "description": "Exchange with supply-driven price, clean vs damaged kills, storage costs. Question: does selling create decisions or admin?"},
+  {"title": "M4 Town, breach and the run", "description": "Wall, garrison, district damage, Lamphouse, a 12-season run with win, loss and score. Question: does the slow dread work, and are runs worth finishing?"},
+  {"title": "M5 Wow and the wall", "description": "Dusk cold open, first-person harpoon on the wall. Question: does it impress in five seconds, and does the wall add agency?"},
+  {"title": "M6 Town walk", "description": "Your house, shops, the exchange floor, rumours. Question: does walking change a decision?"},
+  {"title": "M7 Depth", "description": "Survey office, evolving herds, second species, unlocks, generated valleys, modifiers. Question: is the tenth run as interesting as the third?"}
+]

@@ -1,0 +1,23 @@
+name: Chore
+description: Tooling, CI, docs, refactoring or upkeep with no change to how the game plays.
+title: "chore: "
+labels: ["type: chore"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      placeholder: |
+        - ...
