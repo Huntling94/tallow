@@ -2,7 +2,7 @@
 
 An open-source 3D strategy game made in the open, with its full design, architecture and decision history, built with an AI-assisted workflow using Claude Code.
 
-> **Status: pre-production.** We are laying foundations (milestone M0). There is nothing to play yet.
+> **Status: pre-production.** We are laying foundations (milestone M0). There is no game to play yet, but the first grey-box shot runs in your browser: [huntling94.github.io/tallow](https://huntling94.github.io/tallow/). It is rebuilt on every change to `main`.
 
 ## The game
 

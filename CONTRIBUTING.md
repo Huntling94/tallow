@@ -57,7 +57,19 @@ This fetches the gdUnit4 test framework (a pinned, checksum-checked version) int
 python tools/godot/run_tests.py
 ```
 
-This runs every Godot test headless. Set `GODOT` to the Godot executable if it is not on your PATH. Open the project in the editor from `game/project.godot`.
+This runs every Godot test headless. Set `GODOT` to the Godot executable if it is not on your PATH. Open the project in the editor from `game/project.godot`, and press Play (F5) to run the grey-box valley.
+
+To build the web version locally:
+
+```bash
+python tools/godot/install_web_templates.py
+mkdir -p build/web
+godot --headless --path game --import
+godot --headless --path game --export-release Web ../build/web/index.html
+python -m http.server 8060 --directory build/web
+```
+
+The first command installs Godot's web export templates (it downloads a 1.3 GB archive once and keeps only the web part). The last serves the build at `http://localhost:8060`. CI builds the web version on every pull request and deploys it to GitHub Pages on every merge to `main`.
 
 The Python analysis lives in `analysis/` and is managed with uv, which fetches the pinned Python version itself:
 
