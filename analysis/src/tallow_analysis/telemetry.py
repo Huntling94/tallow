@@ -7,7 +7,9 @@ know is an error, never a guess.
 
 The writer ends every line with a newline. A last line with no newline that is
 not valid JSON was cut off mid-write, so it is dropped and the run loads as
-incomplete. Any other malformed line, including a blank one, is an error.
+incomplete. Any other malformed line, including a blank one, is an error, as
+is a file that is not valid UTF-8 or an event whose `season`, `tick` or `seq`
+is not a whole number.
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ RUN_END = "run_end"
 # docs/architecture/telemetry.md (M1) becomes the full reference.
 HEADER_FIELDS = ("type", "schema_version", "rules_version", "run_id", "seed", "settings")
 EVENT_FIELDS = ("type", "schema_version", "run_id", "season", "tick", "seq")
+# Fields that order events within a run; each must be a whole number.
+ORDER_FIELDS = ("season", "tick", "seq")
 SUMMARY_FIELDS = ("type", "schema_version", "run_id", "outcome", "score", "seasons")
 
 Record = dict[str, Any]
@@ -64,12 +68,17 @@ def load_run(path: str | Path) -> Run:
     `TelemetryError` for anything else malformed.
     """
     path = Path(path)
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_bytes().decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise TelemetryError(f"{path}: not valid UTF-8 (byte {error.start})") from error
     lines = text.splitlines()
     truncated = bool(lines) and not text.endswith("\n") and not _is_json(lines[-1])
     if truncated:
         lines.pop()
     records = [_parse_line(path, number, line) for number, line in enumerate(lines, start=1)]
+    if not records and truncated:
+        raise TelemetryError(f"{path}: run was cut off before its header was complete")
     if not records:
         raise TelemetryError(f"{path}: file is empty")
 
@@ -91,6 +100,9 @@ def load_run(path: str | Path) -> Run:
             raise TelemetryError(f"{path}:{number}: {event['type']!r} out of place")
         _require(path, number, event, EVENT_FIELDS)
         _check_run_id(path, number, event, header["run_id"])
+        for field in ORDER_FIELDS:
+            if not _is_whole_number(event[field]):
+                raise TelemetryError(f"{path}:{number}: {field} must be a whole number")
         order = (event["season"], event["tick"], event["seq"])
         if previous is not None and order <= previous:
             raise TelemetryError(
@@ -118,8 +130,7 @@ def _parse_line(path: Path, number: int, line: str) -> Record:
         raise TelemetryError(f"{path}:{number}: record must be a JSON object")
 
     version = record.get("schema_version")
-    # bool is a subclass of int in Python, so rule it out explicitly.
-    if not isinstance(version, int) or isinstance(version, bool):
+    if not _is_whole_number(version):
         raise TelemetryError(f"{path}:{number}: schema_version must be a whole number")
     if version not in SUPPORTED_SCHEMA_VERSIONS:
         supported = ", ".join(str(v) for v in sorted(SUPPORTED_SCHEMA_VERSIONS))
@@ -127,6 +138,11 @@ def _parse_line(path: Path, number: int, line: str) -> Record:
             f"{path}:{number}: schema_version {version} is not supported (supported: {supported})"
         )
     return record
+
+
+def _is_whole_number(value: object) -> bool:
+    # bool is a subclass of int in Python, so rule it out explicitly.
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _require(path: Path, number: int, record: Record, fields: tuple[str, ...]) -> None:

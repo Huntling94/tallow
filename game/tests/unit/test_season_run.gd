@@ -3,7 +3,7 @@ extends GdUnitTestSuite
 
 
 func test_each_season_has_a_herd_arrival_then_a_season_end() -> void:
-	var events := SeasonRun.new().run(42, 3)
+	var events := SeasonRun.new().run(RandomStreams.new(42), 3)
 	var types: Array[String] = []
 	for event: Dictionary in events:
 		types.append(event["type"])
@@ -23,7 +23,7 @@ func test_each_season_has_a_herd_arrival_then_a_season_end() -> void:
 
 
 func test_events_are_ordered_by_season_tick_and_seq() -> void:
-	var events := SeasonRun.new().run(42, 4)
+	var events := SeasonRun.new().run(RandomStreams.new(42), 4)
 	for index: int in range(1, events.size()):
 		var before: Dictionary = events[index - 1]
 		var after: Dictionary = events[index]
@@ -33,11 +33,26 @@ func test_events_are_ordered_by_season_tick_and_seq() -> void:
 
 
 func test_herd_sizes_are_in_range_and_follow_the_seed() -> void:
-	var sizes_42 := _sizes(SeasonRun.new().run(42, 6))
+	var sizes_42 := _sizes(SeasonRun.new().run(RandomStreams.new(42), 6))
 	for size: int in sizes_42:
 		assert_int(size).is_between(SeasonRun.HERD_MIN, SeasonRun.HERD_MAX)
-	assert_array(_sizes(SeasonRun.new().run(42, 6))).is_equal(sizes_42)
-	assert_array(_sizes(SeasonRun.new().run(7, 6))).is_not_equal(sizes_42)
+	assert_array(_sizes(SeasonRun.new().run(RandomStreams.new(42), 6))).is_equal(sizes_42)
+	assert_array(_sizes(SeasonRun.new().run(RandomStreams.new(7), 6))).is_not_equal(sizes_42)
+
+
+func test_the_run_uses_the_streams_it_is_given() -> void:
+	var given := _sizes(SeasonRun.new().run(RandomStreams.new(42), 6))
+	var herd := RandomStreams.new(42).for_system("herd")
+	var expected: Array[int] = []
+	for _season: int in 6:
+		expected.append(herd.randi_range(SeasonRun.HERD_MIN, SeasonRun.HERD_MAX))
+	assert_array(given).is_equal(expected)
+
+
+func test_the_season_run_never_creates_its_own_streams() -> void:
+	var source := FileAccess.get_file_as_string("res://src/sim/season_run.gd")
+	assert_str(source).is_not_empty()
+	assert_str(source).not_contains("RandomStreams.new")
 
 
 func _sizes(events: Array[Dictionary]) -> Array[int]:

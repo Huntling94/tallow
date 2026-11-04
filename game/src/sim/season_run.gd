@@ -8,10 +8,11 @@ const HERD_MIN := 8
 const HERD_MAX := 24
 
 
-## The events of a run of `seasons` seasons from `run_seed`, in order. Each
-## event has `type`, `season`, `tick` and `seq` plus its own fields.
-func run(run_seed: int, seasons: int) -> Array[Dictionary]:
-	var herd := RandomStreams.new(run_seed).for_system("herd")
+## The events of a run of `seasons` seasons drawing from `streams`, in order.
+## Each event has `type`, `season`, `tick` and `seq` plus its own fields. The
+## caller creates the streams from the run seed; the run never makes its own.
+func run(streams: RandomStreams, seasons: int) -> Array[Dictionary]:
+	var herd := streams.for_system("herd")
 	var events: Array[Dictionary] = []
 	for season: int in range(1, seasons + 1):
 		var tick := 0
