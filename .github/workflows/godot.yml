@@ -1,6 +1,7 @@
 name: godot
 
-# Lints the GDScript and runs the Godot tests headless with gdUnit4.
+# Lints the GDScript, runs the Godot tests headless with gdUnit4, and runs a
+# smoke test of the path from the headless runner to Python.
 
 on:
   push:
@@ -46,3 +47,31 @@ jobs:
 
       - name: Run tests
         run: python tools/godot/run_tests.py
+
+  # Spec 0027: the whole data path, from the headless runner to Python.
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.7"
+
+      - name: Install Godot
+        run: |
+          zip="Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -sSfL -o "$RUNNER_TEMP/$zip" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/$zip"
+          echo "${GODOT_SHA512}  $RUNNER_TEMP/$zip" | sha512sum --check
+          unzip -q "$RUNNER_TEMP/$zip" -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Run the headless runner
+        run: |
+          "$GODOT" --headless --path game --import
+          "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- \
+            --seed 42 --seasons 3 --out ../telemetry/run_42.jsonl
+
+      - name: Check the run with Python
+        run: uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/run_42.jsonl

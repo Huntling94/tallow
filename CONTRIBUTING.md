@@ -81,6 +81,15 @@ uv run pytest
 
 This installs the analysis package and its development tools into `analysis/.venv/` and runs its tests. Format and lint with `uv run ruff format` and `uv run ruff check`.
 
+To make a run and check it, from the repository root:
+
+```bash
+godot --headless --path game -s res://tools/headless_runner.gd -- --seed 42 --seasons 6 --out ../telemetry/run_42.jsonl
+uv run --directory analysis python -m tallow_analysis.check_run ../telemetry/run_42.jsonl
+```
+
+The runner's `--out` path is relative to `game/`; `telemetry/` is git-ignored. The same seed always gives the same file. To open the notebooks, install their extra dependencies with `uv sync --group notebook` in `analysis/`, then open `notebooks/` in Jupyter or VS Code with the `analysis/.venv` kernel.
+
 ## Conduct and security
 
 Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem, see [SECURITY.md](SECURITY.md); please do not open a public issue.
