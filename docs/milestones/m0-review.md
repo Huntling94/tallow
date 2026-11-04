@@ -41,7 +41,7 @@
 
 ## One process change
 
-**A written route for the maintainer to waive the spec gate.** The workflow had two ways to skip gates 1 and 2: prototypes, and small changes. Work like the grey-box valley fitted neither, so the reviewer correctly blocked it until an exception was recorded in a way it could verify. `docs/process/workflow.md` now says how to waive the gates: the maintainer writes the waiver on the PR in their own words, and the issue's "Done when" list stands in for the acceptance criteria. The waiver is for the maintainer to use, not a default. Simulation code always takes the full loop. The definition of ready and the PR template now name the waiver too.
+**A written route for the maintainer to waive the spec gate.** The workflow had two ways to skip gates 1 and 2: prototypes, and small changes. Work like the grey-box valley fitted neither, so the reviewer correctly blocked it until an exception was recorded in a way it could verify. `docs/process/workflow.md` now says how to waive the gates: the maintainer writes the waiver on the PR in their own words, and the issue's "Done when" list stands in for the acceptance criteria. The waiver is for the maintainer to use, not a default. Simulation code always takes the full loop. The reviewer agent, `CLAUDE.md`, the definition of ready and the PR template now name the waiver too, so the next waived PR is not blocked again.
 
 ## Next
 
