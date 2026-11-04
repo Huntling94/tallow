@@ -1,0 +1,33 @@
+{
+  "id": "grey_box",
+  "entry": "the_neck",
+  "gate": "town_gate",
+  "segments": [
+    {"id": "neck_pass", "from": "the_neck", "to": "fork", "length_m": 600, "roughness": 0.2},
+    {"id": "cairn_west", "from": "fork", "to": "cairn", "length_m": 2200, "roughness": 0.1},
+    {"id": "cairn_south", "from": "cairn", "to": "join", "length_m": 1800, "roughness": 0.15},
+    {"id": "ridge_climb", "from": "fork", "to": "ridge_top", "length_m": 1400, "roughness": 0.45},
+    {"id": "ridge_drop", "from": "ridge_top", "to": "join", "length_m": 1600, "roughness": 0.2},
+    {"id": "ford_bank", "from": "fork", "to": "ford", "length_m": 1000, "roughness": 0.5},
+    {"id": "ford_crossing", "from": "ford", "to": "flats", "length_m": 600, "roughness": 1.0},
+    {"id": "ford_flats", "from": "flats", "to": "join", "length_m": 1000, "roughness": 0.0},
+    {"id": "town_approach", "from": "join", "to": "town_gate", "length_m": 400, "roughness": 0.1}
+  ],
+  "routes": [
+    {
+      "id": "cairn_pass",
+      "name": "Cairn Pass",
+      "segments": ["neck_pass", "cairn_west", "cairn_south", "town_approach"]
+    },
+    {
+      "id": "split_ridge",
+      "name": "Split Ridge",
+      "segments": ["neck_pass", "ridge_climb", "ridge_drop", "town_approach"]
+    },
+    {
+      "id": "low_ford",
+      "name": "Low Ford",
+      "segments": ["neck_pass", "ford_bank", "ford_crossing", "ford_flats", "town_approach"]
+    }
+  ]
+}

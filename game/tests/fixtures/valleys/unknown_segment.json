@@ -1,0 +1,13 @@
+{
+  "id": "unknown_segment",
+  "entry": "entry",
+  "gate": "gate",
+  "segments": [
+    {"id": "shared", "from": "entry", "to": "fork", "length_m": 500, "roughness": 0.1},
+    {"id": "east_leg", "from": "fork", "to": "gate", "length_m": 1000, "roughness": 0.5}
+  ],
+  "routes": [
+    {"id": "west", "name": "West", "segments": ["shared", "ghost_leg"]},
+    {"id": "east", "name": "East", "segments": ["shared", "east_leg"]}
+  ]
+}

@@ -1,0 +1,55 @@
+extends GdUnitTestSuite
+## Spec 0037, AC1: the valley and herd files load into checked, typed values.
+
+const FIXTURES := "res://tests/fixtures/valleys"
+
+
+func test_the_grey_box_valley_loads_with_three_connected_routes() -> void:
+	var graph := GameData.load_valley("grey_box")
+	assert_object(graph).is_not_null()
+	assert_array(Array(graph.route_ids)).is_equal(["cairn_pass", "split_ridge", "low_ford"])
+	assert_array(Array(graph.errors())).is_empty()
+
+
+func test_every_grey_box_route_has_at_least_a_quarter_of_the_odds() -> void:
+	var ppm := RouteChoice.probabilities_ppm(
+		RouteChoice.utilities(GameData.load_valley("grey_box"), GameData.load_herd("steady"))
+	)
+	for share: int in ppm:
+		assert_int(share).is_greater_equal(250000)
+
+
+func test_the_steady_herd_loads_its_weights_and_sizes() -> void:
+	var herd := GameData.load_herd("steady")
+	assert_object(herd).is_not_null()
+	assert_float(herd.weight_length_per_km).is_equal(-1.0)
+	assert_float(herd.weight_rough_per_km).is_equal(-2.0)
+	assert_float(herd.weight_threat).is_equal(-1.5)
+	assert_int(herd.herd_min).is_equal(18)
+	assert_int(herd.herd_max).is_equal(30)
+	assert_int(herd.band_min).is_equal(3)
+	assert_int(herd.band_max).is_equal(6)
+
+
+func test_an_unknown_segment_is_reported_with_its_route() -> void:
+	_assert_rejected("unknown_segment.json", "west: unknown segment ghost_leg")
+
+
+func test_a_broken_chain_is_reported_with_its_route() -> void:
+	_assert_rejected("broken_chain.json", "west: segment west_leg does not start where")
+
+
+func test_a_route_that_misses_the_gate_is_reported() -> void:
+	_assert_rejected("misses_gate.json", "west: ends at fork, not the gate")
+
+
+func test_a_missing_file_gives_no_valley() -> void:
+	assert_object(GameData.load_valley_file(FIXTURES.path_join("missing.json"))).is_null()
+
+
+func _assert_rejected(file_name: String, expected: String) -> void:
+	var path := FIXTURES.path_join(file_name)
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var errors := GameData.parse_valley(data).errors()
+	assert_str("\n".join(errors)).contains(expected)
+	assert_object(GameData.load_valley_file(path)).is_null()

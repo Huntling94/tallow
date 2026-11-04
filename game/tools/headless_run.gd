@@ -22,8 +22,12 @@ static func run(
 	var rules_version := RulesVersion.compute(rule_folders)
 	if rules_version.is_empty():
 		return ERR_FILE_NOT_FOUND
+	var graph := GameData.load_valley(SETTINGS["valley"])
+	var herd := GameData.load_herd(SETTINGS["herd_personality"])
+	if graph == null or herd == null:
+		return ERR_INVALID_DATA
 	var settings := SETTINGS.duplicate()
 	settings["seasons"] = seasons
-	var events := SeasonRun.new().run(RandomStreams.new(run_seed), seasons)
+	var events := SeasonRun.new().run(RandomStreams.new(run_seed), graph, herd, seasons)
 	var file_lines := TelemetryWriter.lines(rules_version, run_seed, settings, events)
 	return TelemetryWriter.write(out_path, file_lines)
