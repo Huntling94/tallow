@@ -28,9 +28,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_time += delta
 	if _finished:
 		return
-	_time += delta
 	global_transform = pose_at(_time)
 	_finished = _time >= DURATION
 
@@ -39,7 +39,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var click := event as InputEventMouseButton
 	if (
-		(key and key.pressed and key.keycode == KEY_R)
+		(key and key.pressed and not key.echo and key.keycode == KEY_R)
 		or (click and click.pressed and click.button_index == MOUSE_BUTTON_LEFT)
 	):
 		replay()
@@ -49,6 +49,11 @@ func replay() -> void:
 	_time = 0.0
 	_finished = false
 	global_transform = pose_at(0.0)
+
+
+## Seconds since the shot started, carrying on after it ends.
+func since_start() -> float:
+	return _time
 
 
 ## Seconds into the shot, from 0 to DURATION.

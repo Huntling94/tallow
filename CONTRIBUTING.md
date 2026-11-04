@@ -63,6 +63,8 @@ To build the web version locally:
 
 ```bash
 python tools/godot/install_web_templates.py
+mkdir -p build/web
+godot --headless --path game --import
 godot --headless --path game --export-release Web ../build/web/index.html
 python -m http.server 8060 --directory build/web
 ```

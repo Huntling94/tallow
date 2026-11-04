@@ -14,6 +14,8 @@ const GRID_STEP := 4.0
 const TOWN_CENTRE := Vector3(0.0, 0.0, 70.0)
 const TOWN_RADIUS := 26.0
 const BEAST_SPEED := 1.6
+## The herd keeps walking after the shot ends, then halts short of the town.
+const HERD_WALK_SECONDS := 40.0
 const LAMP_ENERGY := 4.0
 const LAMPHOUSE_ENERGY := 10.0
 
@@ -66,9 +68,10 @@ func _process(_delta: float) -> void:
 		var full := LAMPHOUSE_ENERGY if index == 0 else LAMP_ENERGY
 		lamp.light_energy = full * lamp_level(time, index, _lamps.size())
 	# Driven by the shot clock, so a replay puts the herd back where it started.
+	var walked := BEAST_SPEED * minf(_camera.since_start(), HERD_WALK_SECONDS)
 	for index: int in _beasts.size():
 		var beast := _beasts[index]
-		beast.position.z = _beast_starts[index] + BEAST_SPEED * time
+		beast.position.z = _beast_starts[index] + walked
 		beast.position.y = height_at(beast.position.x, beast.position.z)
 
 
