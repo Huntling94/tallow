@@ -4,6 +4,10 @@ A file holds a run header (`run_start`), then one event per line, then a run
 summary (`run_end`). A file without a summary is an incomplete run. Every
 record carries a whole-number `schema_version`; a version this loader does not
 know is an error, never a guess.
+
+The writer ends every line with a newline. A last line with no newline that is
+not valid JSON was cut off mid-write, so it is dropped and the run loads as
+incomplete. Any other malformed line, including a blank one, is an error.
 """
 
 from __future__ import annotations
@@ -40,8 +44,9 @@ class Run:
     """One run: its header, its events in file order, and its summary if it finished."""
 
     header: Record
-    events: list[Record]
+    events: tuple[Record, ...]
     summary: Record | None
+    truncated: bool = False
 
     @property
     def run_id(self) -> str:
@@ -59,10 +64,12 @@ def load_run(path: str | Path) -> Run:
     `TelemetryError` for anything else malformed.
     """
     path = Path(path)
-    records = [
-        _parse_line(path, number, line)
-        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1)
-    ]
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    truncated = bool(lines) and not text.endswith("\n") and not _is_json(lines[-1])
+    if truncated:
+        lines.pop()
+    records = [_parse_line(path, number, line) for number, line in enumerate(lines, start=1)]
     if not records:
         raise TelemetryError(f"{path}: file is empty")
 
@@ -78,13 +85,28 @@ def load_run(path: str | Path) -> Run:
         _require(path, len(records), summary, SUMMARY_FIELDS)
         _check_run_id(path, len(records), summary, header["run_id"])
 
+    previous: tuple[int, int, int] | None = None
     for number, event in enumerate(body, start=2):
         if event.get("type") in (RUN_START, RUN_END):
             raise TelemetryError(f"{path}:{number}: {event['type']!r} out of place")
         _require(path, number, event, EVENT_FIELDS)
         _check_run_id(path, number, event, header["run_id"])
+        order = (event["season"], event["tick"], event["seq"])
+        if previous is not None and order <= previous:
+            raise TelemetryError(
+                f"{path}:{number}: (season, tick, seq) {order} does not follow {previous}"
+            )
+        previous = order
 
-    return Run(header=header, events=body, summary=summary)
+    return Run(header=header, events=tuple(body), summary=summary, truncated=truncated)
+
+
+def _is_json(line: str) -> bool:
+    try:
+        json.loads(line)
+    except json.JSONDecodeError:
+        return False
+    return True
 
 
 def _parse_line(path: Path, number: int, line: str) -> Record:

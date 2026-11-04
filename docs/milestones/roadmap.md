@@ -28,7 +28,7 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 5. ADRs 0001 to 0004, the architecture overview and the docs index (done: merged in #10, reviewed in #12)
 6. Godot project skeleton, gdformat and gdlint, gdUnit4, a first test, and a CI lint-and-test job (done: #19)
 7. Python analysis skeleton (uv, ruff, pytest) and its CI job (done: #22)
-8. A headless runner stub writing telemetry, a notebook reading it, and a CI smoke run
+8. A headless runner stub writing telemetry, a notebook reading it, and a CI smoke run (done: #28)
 9. Web export and GitHub Pages deploy: a grey-box valley with the dusk camera move (done: #25, brought forward ahead of step 8 so there was something to look at early)
 10. All checks required, tag `v0.1.0`, devlog entry 1, the M0 review
 

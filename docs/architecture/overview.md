@@ -278,7 +278,7 @@ game/                    Godot 4 project
   tools/                 headless runner
   tests/                 gdUnit4: unit/, invariants/, golden/, plus support/ helpers and fixtures/
 analysis/                Python, managed with uv
-  src/tallow_analysis/   io, features, models, calibration, reports
+  src/tallow_analysis/   telemetry (loading and checks), later features, models, calibration, reports
   tests/
   notebooks/             exploratory only; outputs stripped
   fixtures/              small sample telemetry

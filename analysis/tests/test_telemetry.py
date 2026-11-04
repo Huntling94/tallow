@@ -105,3 +105,81 @@ def test_rejects_a_line_that_is_not_json(tmp_path: Path) -> None:
 def test_rejects_an_empty_file(tmp_path: Path) -> None:
     with pytest.raises(TelemetryError, match="file is empty"):
         load_run(write(tmp_path, []))
+
+
+def test_a_cut_off_last_line_loads_as_an_incomplete_run(tmp_path: Path) -> None:
+    path = write(tmp_path, records()[:-1])
+    path.write_text(path.read_text(encoding="utf-8") + '{"type": "run_e', encoding="utf-8")
+
+    run = load_run(path)
+
+    assert not run.complete
+    assert run.truncated
+    assert len(run.events) == 3
+
+
+def test_a_malformed_last_line_that_ends_with_a_newline_is_still_an_error(
+    tmp_path: Path,
+) -> None:
+    path = write(tmp_path, records()[:-1])
+    path.write_text(path.read_text(encoding="utf-8") + '{"type": "run_e\n', encoding="utf-8")
+
+    with pytest.raises(TelemetryError, match=":5: not valid JSON"):
+        load_run(path)
+
+
+def test_a_valid_last_line_without_a_newline_is_kept(tmp_path: Path) -> None:
+    path = write(tmp_path, records())
+    path.write_text(path.read_text(encoding="utf-8").rstrip("\n"), encoding="utf-8")
+
+    run = load_run(path)
+
+    assert run.complete
+    assert not run.truncated
+
+
+def test_a_blank_line_is_an_error(tmp_path: Path) -> None:
+    path = write(tmp_path, records())
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_text("\n".join([*lines[:2], "", *lines[2:]]) + "\n", encoding="utf-8")
+
+    with pytest.raises(TelemetryError, match=":3: not valid JSON"):
+        load_run(path)
+
+
+@pytest.mark.parametrize(
+    ("line", "field"), [(0, "rules_version"), (4, "outcome")], ids=["header", "summary"]
+)
+def test_rejects_a_header_or_summary_missing_a_field(tmp_path: Path, line: int, field: str) -> None:
+    rows = records()
+    del rows[line][field]
+
+    with pytest.raises(TelemetryError, match=rf":{line + 1}: missing field\(s\) {field}"):
+        load_run(write(tmp_path, rows))
+
+
+def test_rejects_a_summary_from_another_run(tmp_path: Path) -> None:
+    rows = records()
+    rows[-1]["run_id"] = "other-run"
+
+    with pytest.raises(TelemetryError, match=":5: run_id 'other-run' does not match"):
+        load_run(write(tmp_path, rows))
+
+
+@pytest.mark.parametrize(
+    ("row", "order"),
+    [(2, (1, 0, 0)), (3, (1, 0, 0)), (2, (0, 99, 9))],
+    ids=["repeated", "earlier seq", "earlier season"],
+)
+def test_rejects_events_out_of_order(tmp_path: Path, row: int, order: tuple[int, int, int]) -> None:
+    rows = records()
+    rows[row]["season"], rows[row]["tick"], rows[row]["seq"] = order
+
+    with pytest.raises(TelemetryError, match=rf":{row + 1}: .* does not follow"):
+        load_run(write(tmp_path, rows))
+
+
+def test_a_loaded_run_cannot_be_changed() -> None:
+    run = load_run(COMPLETE)
+
+    assert isinstance(run.events, tuple)

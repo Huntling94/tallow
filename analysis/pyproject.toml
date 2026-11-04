@@ -12,6 +12,11 @@ dev = [
     "pytest>=8.4",
     "ruff>=0.14",
 ]
+# Only for running notebooks; CI and the tests do not install it.
+notebook = [
+    "ipykernel>=6.29",
+    "matplotlib>=3.10",
+]
 
 [build-system]
 requires = ["uv_build>=0.9,<0.14"]
