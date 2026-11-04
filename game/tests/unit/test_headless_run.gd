@@ -16,13 +16,20 @@ func after_test() -> void:
 
 func test_a_run_writes_header_events_and_summary() -> void:
 	var records := _run(42, 3, "a.jsonl")
-	assert_int(records.size()).is_equal(8)
 	assert_str(records[0]["type"]).is_equal("run_start")
 	assert_int(int(records[0]["seed"])).is_equal(42)
+	assert_str(records[0]["settings"]["valley"]).is_equal("grey_box")
+	assert_str(records[0]["settings"]["herd_personality"]).is_equal("steady")
 	assert_str(records[-1]["type"]).is_equal("run_end")
 	assert_int(int(records[-1]["seasons"])).is_equal(3)
+	var types := {}
 	for record: Dictionary in records.slice(1, -1):
-		assert_array(["herd_arrived", "season_ended"]).contains([record["type"]])
+		types[record["type"]] = types.get(record["type"], 0) + 1
+	assert_int(types["herd_arrived"]).is_equal(3)
+	assert_int(types["route_options"]).is_equal(3)
+	assert_int(types["season_ended"]).is_equal(3)
+	assert_int(types["route_chosen"]).is_greater_equal(3)
+	assert_int(types.size()).is_equal(4)
 
 
 func test_the_same_seed_gives_byte_identical_files() -> void:
