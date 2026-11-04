@@ -227,7 +227,7 @@ flowchart LR
 
 ## 7. The statistical loop
 
-**Shows:** how the project proves its models work. **Leaves out:** the models themselves (see `docs/models/` once they exist).
+**Shows:** how the project proves its models work. **Leaves out:** the models themselves (see `docs/models/` once they exist). Every telemetry record and field is listed in the [telemetry data dictionary](telemetry.md).
 
 ```mermaid
 flowchart LR
