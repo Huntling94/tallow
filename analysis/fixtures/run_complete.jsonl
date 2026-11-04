@@ -1,0 +1,5 @@
+{"type": "run_start", "schema_version": 1, "rules_version": "3f9a1c2e", "run_id": "3f9a1c2e-42-a1b2", "seed": 42, "settings": {"valley": "test_valley", "herd_personality": "steady", "modifier": null, "bot_strategy": "fence_first"}}
+{"type": "herd_arrived", "schema_version": 1, "run_id": "3f9a1c2e-42-a1b2", "season": 1, "tick": 0, "seq": 0, "herd_size": 12}
+{"type": "route_chosen", "schema_version": 1, "run_id": "3f9a1c2e-42-a1b2", "season": 1, "tick": 0, "seq": 1, "route": "north_pass"}
+{"type": "beast_killed", "schema_version": 1, "run_id": "3f9a1c2e-42-a1b2", "season": 1, "tick": 37, "seq": 0, "defence": "pit", "clean": true}
+{"type": "run_end", "schema_version": 1, "run_id": "3f9a1c2e-42-a1b2", "outcome": "survived", "score": 120, "seasons": 1}

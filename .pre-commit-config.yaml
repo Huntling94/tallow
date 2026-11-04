@@ -29,6 +29,20 @@ repos:
       - id: gdformat
       - id: gdlint
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff-check
+        files: ^analysis/
+      - id: ruff-format
+        files: ^analysis/
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+      - id: nbstripout
+        files: ^analysis/notebooks/
+
   - repo: local
     hooks:
       - id: public-language-guard
@@ -42,6 +56,12 @@ repos:
         entry: python -m unittest discover -s tools/checks
         language: python
         files: ^tools/checks/
+        pass_filenames: false
+      - id: analysis-tests
+        name: tests for analysis (needs uv)
+        entry: uv run --directory analysis --locked pytest -q
+        language: system
+        files: ^analysis/
         pass_filenames: false
       - id: public-language-guard-message
         name: public language guard (commit message)
