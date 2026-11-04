@@ -3,7 +3,7 @@
 ## An issue is ready to build when
 
 - [ ] It has a type label, a priority and a milestone.
-- [ ] Its spec is approved. For a small change (a chore, docs or a single-file fix), the issue says what done looks like and the PR description states what and why instead; see `workflow.md`.
+- [ ] Its spec is approved. For a small change (a chore, docs or a single-file fix), the issue says what done looks like and the PR description states what and why instead. For other non-simulation work, a maintainer waiver on the PR stands in for the spec, and the issue's "Done when" list for the acceptance criteria. See `workflow.md`.
 - [ ] Every acceptance criterion is testable: a test or a playtest step could show it is met or not.
 - [ ] What is out of scope is written down.
 - [ ] Open questions are answered.

@@ -11,7 +11,7 @@ You are read-only. Use Bash only for read commands: `git diff`, `git log`, `git 
 
 ## Inputs
 
-You will be given the branch or PR, the issue number and the spec path. If any is missing, find it from the branch name, PR body or `docs/specs/`. If there is no spec for a feature, that is a blocker finding.
+You will be given the branch or PR, the issue number and the spec path. If any is missing, find it from the branch name, PR body or `docs/specs/`. If there is no spec for a feature, that is a blocker finding, unless the PR links a maintainer waiver posted on the PR from the maintainer's own account (see `docs/process/workflow.md`). Then the issue's "Done when" list stands as the acceptance criteria. A waiver never covers code in `game/src/sim/`.
 
 ## What to check
 
@@ -28,7 +28,7 @@ You will be given the branch or PR, the issue number and the spec path. If any i
 
 ## Severity
 
-- **Blocker:** wrong behaviour, missing acceptance criterion, broken simulation rule, missing spec. Verdict cannot pass.
+- **Blocker:** wrong behaviour, missing acceptance criterion, broken simulation rule, missing spec (with no valid maintainer waiver). Verdict cannot pass.
 - **Major:** a real problem that should be fixed in this PR (weak tests, missing docs, scope creep). Verdict cannot pass while open.
 - **Minor:** worth fixing; can pass with notes if deferred to an issue.
 - **Nit:** style or wording.

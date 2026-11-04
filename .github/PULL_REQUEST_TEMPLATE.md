@@ -5,7 +5,7 @@
 ## Linked issue and spec
 
 Closes #
-Spec: <!-- docs/specs/NNNN-title.md, or "not needed" for chores and docs -->
+Spec: <!-- docs/specs/NNNN-title.md, "not needed" for chores and docs, or a link to the maintainer's waiver comment on this PR -->
 
 ## What changed
 

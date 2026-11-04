@@ -30,7 +30,7 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 7. Python analysis skeleton (uv, ruff, pytest) and its CI job (done: #22)
 8. A headless runner stub writing telemetry, a notebook reading it, and a CI smoke run (done: #28)
 9. Web export and GitHub Pages deploy: a grey-box valley with the dusk camera move (done: #25, brought forward ahead of step 8 so there was something to look at early)
-10. All checks required, tag `v0.1.0`, devlog entry 1, the M0 review
+10. All checks required, tag `v0.1.0`, devlog entry 1, the M0 review (devlog entry 1 in #14; the [M0 review](m0-review.md) in #31; required checks and the tag follow #31, tracked in #30)
 
 ### Exit criteria
 
