@@ -11,23 +11,33 @@ const SETTINGS := {
 
 
 ## Runs `seasons` seasons from `run_seed` and writes the telemetry to
-## `out_path`. Returns OK or the error that stopped it. `rule_folders` is
+## `out_path`. `plan_id` names a scripted plan in game/data/plans, or "" for
+## no commands. Returns OK or the error that stopped it. `rule_folders` is
 ## only overridden by tests.
 static func run(
 	run_seed: int,
 	seasons: int,
 	out_path: String,
-	rule_folders: PackedStringArray = RulesVersion.RULE_FOLDERS
+	rule_folders: PackedStringArray = RulesVersion.RULE_FOLDERS,
+	plan_id: String = ""
 ) -> Error:
 	var rules_version := RulesVersion.compute(rule_folders)
 	if rules_version.is_empty():
 		return ERR_FILE_NOT_FOUND
-	var graph := GameData.load_valley(SETTINGS["valley"])
-	var herd := GameData.load_herd(SETTINGS["herd_personality"])
-	if graph == null or herd == null:
+	var setup := GameData.load_setup(SETTINGS["valley"], SETTINGS["herd_personality"])
+	if setup == null:
 		return ERR_INVALID_DATA
+	var plan := {}
+	if plan_id != "":
+		plan = GameData.load_plan(plan_id)
+		if plan.is_empty():
+			return ERR_INVALID_DATA
 	var settings := SETTINGS.duplicate()
 	settings["seasons"] = seasons
-	var events := SeasonRun.new().run(RandomStreams.new(run_seed), graph, herd, seasons)
-	var file_lines := TelemetryWriter.lines(rules_version, run_seed, settings, events)
+	settings["bot_strategy"] = plan_id if plan_id != "" else "none"
+	var season_run := SeasonRun.new(setup, RandomStreams.new(run_seed))
+	var events := season_run.run(seasons, plan)
+	var file_lines := TelemetryWriter.lines(
+		rules_version, run_seed, settings, events, {"money": season_run.state.money}
+	)
 	return TelemetryWriter.write(out_path, file_lines)

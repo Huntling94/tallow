@@ -15,9 +15,14 @@ static func run_id(rules_version: String, run_seed: int, settings: Dictionary) -
 	return JSON.stringify(source, "", true).sha256_text().substr(0, 16)
 
 
-## The file's lines, without line endings.
+## The file's lines, without line endings. `summary` adds optional fields to
+## the run_end record, such as the final money.
 static func lines(
-	rules_version: String, run_seed: int, settings: Dictionary, events: Array[Dictionary]
+	rules_version: String,
+	run_seed: int,
+	settings: Dictionary,
+	events: Array[Dictionary],
+	summary: Dictionary = {}
 ) -> PackedStringArray:
 	var id := run_id(rules_version, run_seed, settings)
 	var records: Array[Dictionary] = [
@@ -37,19 +42,16 @@ static func lines(
 		record["run_id"] = id
 		records.append(record)
 		seasons = maxi(seasons, event["season"])
-	(
-		records
-		. append(
-			{
-				"type": "run_end",
-				"schema_version": SCHEMA_VERSION,
-				"run_id": id,
-				"outcome": "completed",
-				"score": 0,
-				"seasons": seasons,
-			}
-		)
-	)
+	var run_end := {
+		"type": "run_end",
+		"schema_version": SCHEMA_VERSION,
+		"run_id": id,
+		"outcome": "completed",
+		"score": 0,
+		"seasons": seasons,
+	}
+	run_end.merge(summary)
+	records.append(run_end)
 	var result: PackedStringArray = []
 	for record: Dictionary in records:
 		result.append(JSON.stringify(record, "", true))

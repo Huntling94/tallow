@@ -25,11 +25,12 @@ func test_a_run_writes_header_events_and_summary() -> void:
 	var types := {}
 	for record: Dictionary in records.slice(1, -1):
 		types[record["type"]] = types.get(record["type"], 0) + 1
-	assert_int(types["herd_arrived"]).is_equal(3)
-	assert_int(types["route_options"]).is_equal(3)
-	assert_int(types["season_ended"]).is_equal(3)
+	for type: String in ["season_started", "herd_arrived", "route_options", "season_ended"]:
+		assert_int(types[type]).is_equal(3)
 	assert_int(types["route_chosen"]).is_greater_equal(3)
-	assert_int(types.size()).is_equal(4)
+	# With no defences, nothing is killed and every band breaches.
+	assert_bool(types.has("beast_killed")).is_false()
+	assert_int(types["breach"]).is_equal(types["route_chosen"])
 
 
 func test_the_same_seed_gives_byte_identical_files() -> void:
@@ -116,6 +117,25 @@ func test_moving_a_file_between_folders_changes_the_rules_version() -> void:
 	DirAccess.remove_absolute(first.path_join("herd.gd"))
 	_write(second.path_join("herd.gd"), "var size := 8\n")
 	assert_str(RulesVersion.compute([first, second])).is_not_equal(before)
+
+
+func test_the_loader_counts_towards_the_rules_version() -> void:
+	assert_array(Array(RulesVersion.RULE_FOLDERS)).contains(["res://src/loading"])
+
+
+func test_a_run_with_the_demo_plan_builds_defences() -> void:
+	var path := OUT.path_join("demo.jsonl")
+	assert_int(HeadlessRun.run(42, 5, path, RulesVersion.RULE_FOLDERS, "demo")).is_equal(OK)
+	var records: Array = []
+	for line: String in FileAccess.get_file_as_string(path).strip_edges().split("\n"):
+		records.append(JSON.parse_string(line))
+	assert_str(records[0]["settings"]["bot_strategy"]).is_equal("demo")
+	var applied := records.filter(
+		func(r: Dictionary) -> bool: return r["type"] == "command_applied"
+	)
+	assert_int(applied.size()).is_equal(3)
+	var summary: Dictionary = records[-1]
+	assert_bool(summary.has("money")).is_true()
 
 
 func test_the_run_id_follows_rules_version_seed_and_settings() -> void:

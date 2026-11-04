@@ -8,15 +8,14 @@ const TOLERANCE := 0.015
 
 
 func test_route_shares_match_the_model_over_20000_bands() -> void:
-	var graph := GameData.load_valley("grey_box")
-	var herd := GameData.load_herd("steady")
+	var setup := GameData.load_setup("grey_box", "steady")
+	var graph := setup.graph
+	var herd := setup.herd
 	var expected := RouteChoice.probabilities_ppm(RouteChoice.utilities(graph, herd))
 	var counts := {}
 	var bands := 0
 	for run_seed: int in range(1, SEEDS + 1):
-		var events := SeasonRun.new().run(
-			RandomStreams.new(run_seed), graph, herd, SEASONS_PER_SEED
-		)
+		var events := SeasonRun.new(setup, RandomStreams.new(run_seed)).run(SEASONS_PER_SEED, {})
 		for event: Dictionary in events:
 			if event["type"] == "route_chosen":
 				counts[event["route"]] = counts.get(event["route"], 0) + 1

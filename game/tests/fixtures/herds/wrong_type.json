@@ -1,0 +1,6 @@
+{
+  "id": "wrong_type",
+  "weights": {"length_per_km": "steep", "rough_per_km": -2.0, "threat": -1.5},
+  "herd_size": {"min": 18, "max": 30},
+  "band_size": {"min": 3, "max": 6}
+}

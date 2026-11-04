@@ -1,0 +1,6 @@
+{
+  "id": "min_above_max",
+  "weights": {"length_per_km": -1.0, "rough_per_km": -2.0, "threat": -1.5},
+  "herd_size": {"min": 30, "max": 18},
+  "band_size": {"min": 3, "max": 6}
+}
