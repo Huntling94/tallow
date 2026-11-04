@@ -30,19 +30,19 @@
 - **Steps 8 and 9 swapped.** The web build came first so there was something to look at and direct. The two had no dependency, so nothing broke.
 - **An unreviewed merge.** #10 carried eight files its review never saw (devlog entry 1, #14). The catch-up review (#12) tightened the check so a commit after the review that touches an unreviewed file fails it.
 - **Four review rounds on #25.** The grey-box valley skipped the spec as a "small change", but it touched 14 files and the workflow had no other route. Three rounds returned "Changes needed" until the maintainer recorded the exception on the PR in their own words. Each round also found real minor issues, which were fixed.
-- **Follow-ups carried into M1:** #26 (valley), #29 (data path, two items to fix before M1 builds on it), #17 and #20 (CI and test hardening), and Dependabot PR #5.
+- **Follow-ups carried into M1:** #26 (valley), #29 (data path, seven items to do before M1 builds on it), #17 and #20 (CI and test hardening), and Dependabot PR #5.
 
 ## Risks
 
-- **R2, process outruns the game, happened.** On day one, foundations and review rounds took the time with nothing built. Since then, docs and chores get one review round, with nits going to an issue rather than another round. Likelihood raised to High.
+- **R2, process outruns the game, happened.** On day one, foundations and review rounds took the time with nothing built. Since then, as an informal habit rather than a written rule, docs and chores have had one review round, with nits going to an issue. The waiver below is M0's one process change. Likelihood raised to High.
 - **R8, the web build disappoints:** tested. The dusk shot reads well in the Compatibility renderer. Judge the visual target on desktop as planned.
 - **R10, AI-written code hides mistakes:** the reviewer agent caught real defects in every feature PR. Examples: a herd that never reset on replay (#25), and a check command that printed a traceback instead of the loader's error (#28, deferred to #29). It also caught the unreviewed merge in #10.
 - **R12, public text drifts off topic:** the guard ran on every commit and PR with no escapes.
 
 ## One process change
 
-**A written route for the maintainer to waive the spec gate.** The workflow had two ways to skip gates 1 and 2: prototypes, and small changes. Work like the grey-box valley fitted neither, so the reviewer correctly blocked it until an exception was recorded in a way it could verify. `docs/process/workflow.md` now says how to waive the gates: the maintainer writes the waiver on the PR in their own words, and the issue's "Done when" list stands in for the acceptance criteria. The waiver is for the maintainer to use, not a default. Simulation code always takes the full loop. The reviewer agent, `CLAUDE.md`, the definition of ready and the PR template now name the waiver too, so the next waived PR is not blocked again.
+**A written route for the maintainer to waive the spec gate.** The workflow had two ways to skip gates 1 and 2: prototypes, and small changes. Work like the grey-box valley fitted neither, so the reviewer correctly blocked it until an exception was recorded in a way it could verify. `docs/process/workflow.md` now says how to waive the gates: the maintainer writes the waiver on the PR in their own words, and the issue's "Done when" list stands in for the acceptance criteria. The waiver is for the maintainer to use, not a default, and simulation code never takes it. The reviewer agent, `CLAUDE.md`, the definition of ready and the PR template now name the waiver too, so the next waived PR is not blocked again.
 
 ## Next
 
-M1, simulation core: a headless season simulation with herd, routes, three defences, harvest and one price, played by bots over 10,000 seasons. Start with the two #29 items that M1 builds on: the simulation is given its random streams rather than creating them, and the loader reports clean errors.
+M1, simulation core: a headless season simulation with herd, routes, three defences, harvest and one price, played by bots over 10,000 seasons. Start with #29, the data-path follow-ups that M1 builds on. The most important two: the simulation is given its random streams rather than creating them, and the loader reports clean errors.
