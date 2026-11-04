@@ -27,7 +27,7 @@ Steps 2 and 3 can be combined for small changes (chores, docs, single-file fixes
 
 ## Two tracks
 
-- **Production:** everything that ships. Always the full loop.
+- **Production:** everything that ships. The full loop, except for small changes and maintainer waivers as above. Simulation code always takes the full loop.
 - **Prototypes:** timeboxed (1 to 3 days) experiments that answer one question. They skip gates 1 and 2 and strict CI, live in `prototypes/`, and end with a report in `docs/prototypes/`: keep, kill or change. Prototype code is never promoted to production directly; it is rebuilt through the full loop.
 
 ## Branches and commits

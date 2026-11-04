@@ -10,7 +10,7 @@
 
 | Criterion | Met | Evidence |
 |---|---|---|
-| `main` is protected, and every change after the first commit arrived by PR with green checks and the maintainer's explicit approval | Yes | 11 merged PRs, #2 to #28. Every CI check is required from step 10. |
+| `main` is protected, and every change after the first commit arrived by PR with green checks and the maintainer's explicit approval | Yes | 11 merged PRs, #2 to #28, all with green checks. Branch protection required only `guard`, `independent-review` and `tool-tests` during M0. `godot-tests`, `analysis`, `smoke` and `web-build` passed on every PR they ran on, but nothing enforced them. All are required once step 10 is finished. |
 | Every PR except Dependabot's carries a completed Independent review section, enforced by CI | Yes | `review-check` workflow, required since #2 |
 | The web build is live on GitHub Pages | Yes | [huntling94.github.io/tallow](https://huntling94.github.io/tallow/), deployed from `main` by #25 |
 | The headless runner writes telemetry that Python reads, with a test at each layer | Yes | #28: gdUnit4 tests for the simulation, writer and runner; pytest for the loader and `check_run`; the CI `smoke` job runs the whole path |
@@ -30,7 +30,7 @@
 - **Steps 8 and 9 swapped.** The web build came first so there was something to look at and direct. The two had no dependency, so nothing broke.
 - **An unreviewed merge.** #10 carried eight files its review never saw (devlog entry 1, #14). The catch-up review (#12) tightened the check so a commit after the review that touches an unreviewed file fails it.
 - **Four review rounds on #25.** The grey-box valley skipped the spec as a "small change", but it touched 14 files and the workflow had no other route. Three rounds returned "Changes needed" until the maintainer recorded the exception on the PR in their own words. Each round also found real minor issues, which were fixed.
-- **Follow-ups carried into M1:** #26 (valley), #29 (data path, two items to fix before M1 builds on it), #17 and #20 (CI hardening), and Dependabot PR #5.
+- **Follow-ups carried into M1:** #26 (valley), #29 (data path, two items to fix before M1 builds on it), #17 and #20 (CI and test hardening), and Dependabot PR #5.
 
 ## Risks
 
@@ -41,7 +41,7 @@
 
 ## One process change
 
-**A written route for the maintainer to waive the spec gate.** The workflow had two ways to skip gates 1 and 2: prototypes, and small changes. Work like the grey-box valley fitted neither, so the reviewer correctly blocked it until an exception was recorded in a way it could verify. `docs/process/workflow.md` now says how to waive the gates: the maintainer writes the waiver on the PR in their own words, and the issue's "Done when" list stands in for the acceptance criteria. It is a route for the maintainer, not a default: production code still takes the full loop.
+**A written route for the maintainer to waive the spec gate.** The workflow had two ways to skip gates 1 and 2: prototypes, and small changes. Work like the grey-box valley fitted neither, so the reviewer correctly blocked it until an exception was recorded in a way it could verify. `docs/process/workflow.md` now says how to waive the gates: the maintainer writes the waiver on the PR in their own words, and the issue's "Done when" list stands in for the acceptance criteria. The waiver is for the maintainer to use, not a default. Simulation code always takes the full loop. The definition of ready and the PR template now name the waiver too.
 
 ## Next
 
