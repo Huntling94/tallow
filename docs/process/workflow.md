@@ -23,6 +23,8 @@ How a change gets from an idea to `main`. Every change after the first commit fo
 
 Steps 2 and 3 can be combined for small changes (chores, docs, single-file fixes): the issue says what done looks like, the PR description states what and why, and the maintainer's review covers both gates.
 
+**Maintainer waiver.** For a change that is neither small nor a prototype but does not need a spec (for example grey-box presentation with no simulation rules), the maintainer may waive gates 1 and 2. The maintainer writes the waiver on the PR in their own words; a waiver quoted or posted by Claude does not count. The issue's "Done when" list then stands as the acceptance criteria, and the PR links the waiver. Simulation code never takes this route.
+
 ## Two tracks
 
 - **Production:** everything that ships. Always the full loop.

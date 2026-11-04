@@ -15,7 +15,7 @@ defaults:
     working-directory: analysis
 
 jobs:
-  lint-and-test:
+  analysis:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

@@ -21,7 +21,7 @@ env:
   GODOT_SHA512: 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
 
 jobs:
-  build:
+  web-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -73,7 +73,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push'
-    needs: build
+    needs: web-build
     runs-on: ubuntu-latest
     permissions:
       pages: write
