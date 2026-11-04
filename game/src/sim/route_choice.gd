@@ -8,11 +8,14 @@ extends RefCounted
 const PPM := 1_000_000
 
 
-## One utility per route, in the graph's route order.
-static func utilities(graph: RouteGraph, herd: HerdPersonality) -> PackedFloat64Array:
+## One utility per route, in the graph's route order, with threat from the
+## defences on each segment (segment id -> threat units).
+static func utilities(
+	graph: RouteGraph, herd: HerdPersonality, threat_by_segment: Dictionary = {}
+) -> PackedFloat64Array:
 	var result: PackedFloat64Array = []
 	for route_id: String in graph.route_ids:
-		var features := graph.features(route_id)
+		var features := graph.features(route_id, threat_by_segment)
 		result.append(
 			(
 				herd.weight_length_per_km * features["length_m"] / 1000.0

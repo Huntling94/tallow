@@ -72,6 +72,9 @@ jobs:
           "$GODOT" --headless --path game --import
           "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- \
             --seed 42 --seasons 3 --out ../telemetry/run_42.jsonl
+          "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- --seed 42 --plan demo --out ../telemetry/demo_42.jsonl
 
-      - name: Check the run with Python
-        run: uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/run_42.jsonl
+      - name: Check the runs with Python
+        run: |
+          uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/run_42.jsonl
+          uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/demo_42.jsonl

@@ -11,7 +11,7 @@ var gate: String
 ## Route ids in the order the valley file lists them; telemetry keeps this order.
 var route_ids: PackedStringArray = []
 
-var _segments := {}  # segment id -> {from, to, length_m, rough_m, threat}
+var _segments := {}  # segment id -> {from, to, length_m, rough_m}
 var _routes := {}  # route id -> {name, segments}
 
 
@@ -31,7 +31,6 @@ func add_segment(
 		"to": to,
 		"length_m": length_m,
 		"rough_m": roundi(length_m * roughness),
-		"threat": 0,
 	}
 
 
@@ -44,13 +43,28 @@ func route_name(route_id: String) -> String:
 	return _routes[route_id]["name"]
 
 
-## Total length, rough metres and threat over the route's segments.
-func features(route_id: String) -> Dictionary:
+func has_segment(segment_id: String) -> bool:
+	return _segments.has(segment_id)
+
+
+## The route's segments, from the entry to the gate.
+func route_segments(route_id: String) -> PackedStringArray:
+	return _routes[route_id]["segments"]
+
+
+func segment_length(segment_id: String) -> int:
+	return _segments[segment_id]["length_m"]
+
+
+## Total length, rough metres and threat over the route's segments. Threat
+## comes from the defences standing on them (segment id -> threat units).
+func features(route_id: String, threat_by_segment: Dictionary = {}) -> Dictionary:
 	var totals := {"length_m": 0, "rough_m": 0, "threat": 0}
 	for segment_id: String in _routes[route_id]["segments"]:
 		var segment: Dictionary = _segments[segment_id]
-		for key: String in totals:
-			totals[key] += segment[key]
+		totals["length_m"] += segment["length_m"]
+		totals["rough_m"] += segment["rough_m"]
+		totals["threat"] += threat_by_segment.get(segment_id, 0)
 	return totals
 
 

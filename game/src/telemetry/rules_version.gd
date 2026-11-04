@@ -4,7 +4,8 @@ extends RefCounted
 ## game data files (ADR-0003). It changes whenever any of them change, so it
 ## cannot be forgotten.
 
-const RULE_FOLDERS: PackedStringArray = ["res://src/sim", "res://data"]
+## The loader is included because it shapes what the simulation is given.
+const RULE_FOLDERS: PackedStringArray = ["res://src/sim", "res://src/loading", "res://data"]
 ## Engine metadata and docs, which say nothing about the rules.
 const IGNORED_SUFFIXES: PackedStringArray = [".uid", ".import", ".md"]
 

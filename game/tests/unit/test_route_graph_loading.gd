@@ -31,6 +31,37 @@ func test_the_steady_herd_loads_its_weights_and_sizes() -> void:
 	assert_int(herd.band_max).is_equal(6)
 
 
+func test_a_herd_with_a_missing_key_is_rejected() -> void:
+	_assert_herd_rejected("missing_key.json", "weights.threat")
+
+
+func test_a_herd_with_a_mistyped_value_is_rejected() -> void:
+	_assert_herd_rejected("wrong_type.json", "weights.length_per_km must be a number")
+
+
+func test_a_herd_with_min_above_max_is_rejected() -> void:
+	_assert_herd_rejected("min_above_max.json", "herd_size.min is above herd_size.max")
+
+
+func test_a_herd_with_empty_bands_is_rejected() -> void:
+	_assert_herd_rejected("empty_bands.json", "band_size.min must be at least 1")
+
+
+func test_the_defences_and_run_rules_load() -> void:
+	var setup := GameData.load_setup("grey_box", "steady")
+	assert_object(setup).is_not_null()
+	assert_array(setup.defences.keys()).contains_exactly_in_any_order(
+		["fence", "pit", "harpoon_tower"]
+	)
+	assert_int(setup.rules.start_money).is_equal(300)
+
+
+func test_the_demo_plan_loads_by_season() -> void:
+	var plan := GameData.load_plan("demo")
+	assert_array(plan.keys()).contains_exactly_in_any_order([1, 2])
+	assert_str(plan[1][0]["defence"]).is_equal("fence")
+
+
 func test_an_unknown_segment_is_reported_with_its_route() -> void:
 	_assert_rejected("unknown_segment.json", "west: unknown segment ghost_leg")
 
@@ -53,3 +84,10 @@ func _assert_rejected(file_name: String, expected: String) -> void:
 	var errors := GameData.parse_valley(data).errors()
 	assert_str("\n".join(errors)).contains(expected)
 	assert_object(GameData.load_valley_file(path)).is_null()
+
+
+func _assert_herd_rejected(file_name: String, expected: String) -> void:
+	var path := "res://tests/fixtures/herds".path_join(file_name)
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	assert_str("\n".join(GameData.check_herd(data))).contains(expected)
+	assert_object(GameData.load_herd_file(path)).is_null()

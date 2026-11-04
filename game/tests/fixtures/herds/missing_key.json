@@ -1,0 +1,6 @@
+{
+  "id": "missing_key",
+  "weights": {"length_per_km": -1.0, "rough_per_km": -2.0},
+  "herd_size": {"min": 18, "max": 30},
+  "band_size": {"min": 3, "max": 6}
+}

@@ -1,0 +1,14 @@
+{
+  "defences": [
+    {"id": "fence", "name": "Drive fence", "cost": 40, "threat": 2, "kill_ppm": 0, "capacity": 0},
+    {"id": "pit", "name": "Pit trap", "cost": 80, "threat": 1, "kill_ppm": 400000, "capacity": 3},
+    {
+      "id": "harpoon_tower",
+      "name": "Harpoon tower",
+      "cost": 120,
+      "threat": 1,
+      "kill_ppm": 250000,
+      "capacity": 6
+    }
+  ]
+}

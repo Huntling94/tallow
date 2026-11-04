@@ -2,11 +2,13 @@ extends SceneTree
 ## Command-line entry point for the headless runner.
 ##
 ## godot --headless --path game -s res://tools/headless_runner.gd -- \
-##     --seed 42 --seasons 3 --out ../telemetry/run_42.jsonl
+##     --seed 42 --out ../telemetry/run_42.jsonl [--seasons 5] [--plan demo]
 ##
-## A relative --out path is taken from the game/ folder.
+## A relative --out path is taken from the game/ folder. --seasons defaults to
+## 5, the M1 mini-run. --plan names a scripted plan in game/data/plans.
 
-const USAGE := "usage: -- --seed <int> --seasons <int> --out <file>"
+const USAGE := "usage: -- --seed <int> --out <file> [--seasons <int>] [--plan <id>]"
+const DEFAULT_SEASONS := 5
 
 
 func _initialize() -> void:
@@ -18,7 +20,9 @@ func _initialize() -> void:
 	var out_path: String = options["out"]
 	if out_path.is_relative_path():
 		out_path = ProjectSettings.globalize_path("res://").path_join(out_path).simplify_path()
-	var result := HeadlessRun.run(options["seed"], options["seasons"], out_path)
+	var result := HeadlessRun.run(
+		options["seed"], options["seasons"], out_path, RulesVersion.RULE_FOLDERS, options["plan"]
+	)
 	if result != OK:
 		printerr("Run failed: %s" % error_string(result))
 		quit(1)
@@ -28,14 +32,18 @@ func _initialize() -> void:
 
 
 func _parse(args: PackedStringArray) -> Dictionary:
-	var options := {}
-	for index: int in range(0, args.size() - 1, 2):
+	var options := {"seasons": DEFAULT_SEASONS, "plan": ""}
+	if args.size() % 2 != 0:
+		return {}
+	for index: int in range(0, args.size(), 2):
 		var flag := args[index]
 		var value := args[index + 1]
 		if flag in ["--seed", "--seasons"] and value.is_valid_int():
 			options[flag.trim_prefix("--")] = value.to_int()
-		elif flag == "--out":
-			options["out"] = value
-	if options.size() != 3 or args.size() != 6 or options["seasons"] < 1:
+		elif flag in ["--out", "--plan"]:
+			options[flag.trim_prefix("--")] = value
+		else:
+			return {}
+	if not (options.has("seed") and options.has("out")) or options["seasons"] < 1:
 		return {}
 	return options

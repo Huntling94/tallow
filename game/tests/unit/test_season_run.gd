@@ -1,22 +1,17 @@
 extends GdUnitTestSuite
-## Spec 0037: each season a herd arrives, splits into bands, and each band
-## chooses a route on the route graph.
+## Specs 0037 and 0040: each season a herd arrives, splits into bands, and
+## each band chooses a route on the route graph. Golden seeds live in
+## tests/golden.
 
-## Seed 42's first season, pinned. If a change to the rules alters these on
-## purpose, update them in the same pull request.
-const GOLDEN_HERD_SIZE := 24
-const GOLDEN_BAND_SIZES: Array[int] = [4, 6, 5, 3, 6]
-const GOLDEN_ROUTES: Array[String] = [
-	"cairn_pass", "low_ford", "low_ford", "low_ford", "cairn_pass"
-]
-
+var _setup: RunSetup
 var _graph: RouteGraph
 var _herd: HerdPersonality
 
 
 func before() -> void:
-	_graph = GameData.load_valley("grey_box")
-	_herd = GameData.load_herd("steady")
+	_setup = GameData.load_setup("grey_box", "steady")
+	_graph = _setup.graph
+	_herd = _setup.herd
 
 
 func test_each_season_runs_arrival_options_choices_then_end() -> void:
@@ -28,11 +23,12 @@ func test_each_season_runs_arrival_options_choices_then_end() -> void:
 	assert_array(by_season.keys()).is_equal([1, 2, 3])
 	for season: int in by_season:
 		var types: Array = by_season[season]
-		assert_str(types[0]).is_equal("herd_arrived")
-		assert_str(types[1]).is_equal("route_options")
+		assert_str(types[0]).is_equal("season_started")
+		assert_str(types[1]).is_equal("herd_arrived")
+		assert_str(types[2]).is_equal("route_options")
 		assert_str(types[-1]).is_equal("season_ended")
-		for type: String in types.slice(2, -1):
-			assert_str(type).is_equal("route_chosen")
+		var choices := types.filter(func(t: String) -> bool: return t == "route_chosen")
+		assert_int(choices.size()).is_greater_equal(1)
 
 
 func test_events_are_ordered_by_season_tick_and_seq() -> void:
@@ -69,7 +65,8 @@ func test_bands_add_up_to_the_herd_and_stay_in_range() -> void:
 
 
 func test_route_options_list_every_route_with_its_odds() -> void:
-	var options: Dictionary = _run(42, 1)[1]
+	var is_options := func(e: Dictionary) -> bool: return e["type"] == "route_options"
+	var options: Dictionary = _run(42, 1).filter(is_options)[0]
 	var routes: Array = options["routes"]
 	var total := 0
 	for index: int in routes.size():
@@ -88,19 +85,6 @@ func test_the_same_seed_gives_the_same_events() -> void:
 	assert_array(_run(42, 5)).is_not_equal(_run(43, 5))
 
 
-func test_seed_42_matches_the_golden_first_season() -> void:
-	var events := _run(42, 1)
-	var sizes: Array[int] = []
-	var routes: Array[String] = []
-	for event: Dictionary in events:
-		if event["type"] == "route_chosen":
-			sizes.append(event["beasts"])
-			routes.append(event["route"])
-	assert_int(events[0]["herd_size"]).is_equal(GOLDEN_HERD_SIZE)
-	assert_array(sizes).is_equal(GOLDEN_BAND_SIZES)
-	assert_array(routes).is_equal(GOLDEN_ROUTES)
-
-
 func test_the_season_run_never_creates_its_own_streams() -> void:
 	var source := FileAccess.get_file_as_string("res://src/sim/season_run.gd")
 	assert_str(source).is_not_empty()
@@ -108,7 +92,7 @@ func test_the_season_run_never_creates_its_own_streams() -> void:
 
 
 func _run(run_seed: int, seasons: int) -> Array[Dictionary]:
-	return SeasonRun.new().run(RandomStreams.new(run_seed), _graph, _herd, seasons)
+	return SeasonRun.new(_setup, RandomStreams.new(run_seed)).run(seasons, {})
 
 
 func _key(event: Dictionary) -> Array:
