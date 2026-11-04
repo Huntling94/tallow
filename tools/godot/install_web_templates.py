@@ -8,7 +8,8 @@ templates into Godot's templates folder. Single-threaded builds need no
 special server headers, so they run on GitHub Pages. Safe to run repeatedly.
 
 Set GODOT_TEMPLATES_ARCHIVE to a local copy of the archive to skip the
-download (CI uses this with a cache).
+download. CI caches the extracted templates folder instead, so it downloads
+only when that cache is empty.
 
 Usage: python tools/godot/install_web_templates.py
 """

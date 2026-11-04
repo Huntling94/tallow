@@ -2,9 +2,7 @@ class_name DuskCamera
 extends Camera3D
 ## The dusk cold open: a scripted shot that starts low in the valley, looking
 ## up at the herd against the sunset, then rises back over the town and
-## settles into the angled command view. Press R or click to replay.
-
-signal shot_finished
+## settles into the angled command view. Press R or left-click to replay.
 
 const DURATION := 9.0
 
@@ -34,15 +32,16 @@ func _process(delta: float) -> void:
 		return
 	_time += delta
 	global_transform = pose_at(_time)
-	if _time >= DURATION:
-		_finished = true
-		shot_finished.emit()
+	_finished = _time >= DURATION
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var click := event as InputEventMouseButton
-	if (key and key.pressed and key.keycode == KEY_R) or (click and click.pressed):
+	if (
+		(key and key.pressed and key.keycode == KEY_R)
+		or (click and click.pressed and click.button_index == MOUSE_BUTTON_LEFT)
+	):
 		replay()
 
 

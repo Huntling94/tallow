@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: web-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a Pages deploy partway through.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   GODOT_VERSION: 4.7.2-stable

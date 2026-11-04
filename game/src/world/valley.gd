@@ -37,6 +37,7 @@ const LAMP_COLOR := Color(1.0, 0.72, 0.38)
 
 var _lamps: Array[OmniLight3D] = []
 var _beasts: Array[Node3D] = []
+var _beast_starts: Array[float] = []
 var _noise := FastNoiseLite.new()
 
 @onready var _camera: DuskCamera = $DuskCamera
@@ -53,7 +54,7 @@ func _ready() -> void:
 	_build_beasts(rng)
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	var time := _camera.elapsed()
 	var progress := time / DuskCamera.DURATION
 	var elevation := lerpf(SUN_START, SUN_END, progress)
@@ -64,8 +65,10 @@ func _process(delta: float) -> void:
 		var lamp := _lamps[index]
 		var full := LAMPHOUSE_ENERGY if index == 0 else LAMP_ENERGY
 		lamp.light_energy = full * lamp_level(time, index, _lamps.size())
-	for beast: Node3D in _beasts:
-		beast.position.z += BEAST_SPEED * delta
+	# Driven by the shot clock, so a replay puts the herd back where it started.
+	for index: int in _beasts.size():
+		var beast := _beasts[index]
+		beast.position.z = _beast_starts[index] + BEAST_SPEED * time
 		beast.position.y = height_at(beast.position.x, beast.position.z)
 
 
@@ -173,6 +176,7 @@ func _build_beasts(rng: RandomNumberGenerator) -> void:
 		beast.scale = Vector3.ONE * rng.randf_range(1.6, 2.4)
 		herd.add_child(beast)
 		_beasts.append(beast)
+		_beast_starts.append(beast.position.z)
 
 
 func _add_lamp(parent: Node3D, spot: Vector3, reach: float) -> void:
