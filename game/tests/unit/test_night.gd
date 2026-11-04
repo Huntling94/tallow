@@ -64,6 +64,26 @@ func test_night_events_are_in_tick_order_after_tick_zero() -> void:
 		previous = event["tick"]
 
 
+func test_a_band_enters_each_segment_once_it_has_walked_that_far() -> void:
+	# Cairn Pass: 600, 2200, 1800 and 400 metres at 400 metres a tick. Band 1
+	# sets off at tick 1, so it enters after 0, 600, 2800 and 4600 metres,
+	# rounded up to whole ticks, and reaches the gate after 5000 metres.
+	var arrivals := Night.arrivals(_setup, [_band(1, 3, "cairn_pass")])
+	var ticks := arrivals.map(func(a: Array) -> int: return a[0])
+	assert_array(ticks).is_equal([1, 3, 8, 13, 14])
+
+
+func test_a_tower_kills_no_more_than_its_capacity_in_a_night() -> void:
+	for run_seed: int in range(1, 51):
+		var state := RunState.new(1000)
+		state.defences = {"neck_pass": "harpoon_tower"}
+		var bands: Array[Dictionary] = []
+		for band: int in range(1, 9):
+			bands.append(_band(band, 6, "split_ridge"))
+		var events := Night.resolve(_setup, state, bands, _rng(run_seed))
+		assert_int(_count(events, "beast_killed")).is_less_equal(6)
+
+
 func test_later_bands_set_off_later() -> void:
 	var state := RunState.new(1000)
 	var events := Night.resolve(

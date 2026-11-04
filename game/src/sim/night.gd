@@ -14,7 +14,7 @@ const PPM := 1_000_000
 static func resolve(
 	setup: RunSetup, state: RunState, bands: Array[Dictionary], stream: RandomNumberGenerator
 ) -> Array[Dictionary]:
-	var arrivals := _arrivals(setup, bands)
+	var ordered := arrivals(setup, bands)
 	var alive := {}
 	for band: Dictionary in bands:
 		alive[band["band"]] = band["beasts"]
@@ -23,7 +23,7 @@ static func resolve(
 		var defence: DefenceType = setup.defences[state.defences[segment_id]]
 		capacity_left[segment_id] = defence.capacity
 	var events: Array[Dictionary] = []
-	for arrival: Array in arrivals:
+	for arrival: Array in ordered:
 		var tick: int = arrival[0]
 		var band: int = arrival[1]
 		var segment_id: String = arrival[3]
@@ -57,24 +57,26 @@ static func resolve(
 
 ## Every moment a band enters a segment or reaches the gate, as
 ## [tick, band, position on route, segment id or "" for the gate], sorted.
-## Ticks are whole: a band enters a segment on the tick its front reaches it,
-## and reaches the gate on the tick the last metre is covered. Distances are
-## whole metres, far below the size where float division stops being exact.
-static func _arrivals(setup: RunSetup, bands: Array[Dictionary]) -> Array[Array]:
+## Ticks are whole. A band enters a segment once it has covered every segment
+## before it, and reaches the gate once it has covered the whole route, both
+## rounded up to whole ticks (spec 0040). Distances are whole metres, far
+## below the size where float division stops being exact. Public so the
+## viewer can place bands between events.
+static func arrivals(setup: RunSetup, bands: Array[Dictionary]) -> Array[Array]:
 	var speed := setup.rules.speed_m_per_tick
-	var arrivals: Array[Array] = []
+	var found: Array[Array] = []
 	for band: Dictionary in bands:
 		var number: int = band["band"]
 		var start := 1 + (number - 1) * setup.rules.band_spacing_ticks
 		var walked := 0
 		var segments := setup.graph.route_segments(band["route"])
 		for position: int in segments.size():
-			var entered := start + floori(float(walked) / speed)
-			arrivals.append([entered, number, position, segments[position]])
+			var entered := start + ceili(float(walked) / speed)
+			found.append([entered, number, position, segments[position]])
 			walked += setup.graph.segment_length(segments[position])
-		arrivals.append([start + ceili(float(walked) / speed), number, segments.size(), ""])
-	arrivals.sort_custom(_earlier)
-	return arrivals
+		found.append([start + ceili(float(walked) / speed), number, segments.size(), ""])
+	found.sort_custom(_earlier)
+	return found
 
 
 static func _earlier(left: Array, right: Array) -> bool:

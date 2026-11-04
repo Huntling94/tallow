@@ -51,5 +51,13 @@ func test_seed_42_with_the_demo_plan() -> void:
 	assert_int(run.state.money).is_equal(DEMO_FINAL_MONEY_42)
 
 
+func test_the_demo_plan_repeats_exactly() -> void:
+	var plan := GameData.load_plan("demo")
+	var first := SeasonRun.new(_setup, RandomStreams.new(42)).run(5, plan)
+	var second := SeasonRun.new(_setup, RandomStreams.new(42)).run(5, plan)
+	assert_int(first.filter(_of_type("beast_killed")).size()).is_greater(0)
+	assert_array(second).is_equal(first)
+
+
 func _of_type(type: String) -> Callable:
 	return func(e: Dictionary) -> bool: return e["type"] == type
