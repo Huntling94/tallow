@@ -48,7 +48,7 @@ func test_lamps_are_dark_at_the_start_and_all_lit_by_the_end() -> void:
 func test_the_lamphouse_lights_before_the_other_lamps() -> void:
 	var time := Valley.LAMPS_ON_FROM + 0.8
 	assert_float(Valley.lamp_level(time, 0, 8)).is_greater(Valley.lamp_level(time, 1, 8))
-	assert_float(Valley.lamp_level(time, 1, 8)).is_greater_equal(Valley.lamp_level(time, 7, 8))
+	assert_float(Valley.lamp_level(time, 1, 8)).is_greater(Valley.lamp_level(time, 7, 8))
 
 
 func test_the_running_shot_stops_at_its_end_and_replays_from_the_start() -> void:
