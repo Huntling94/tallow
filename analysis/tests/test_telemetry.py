@@ -179,7 +179,35 @@ def test_rejects_events_out_of_order(tmp_path: Path, row: int, order: tuple[int,
         load_run(write(tmp_path, rows))
 
 
-def test_a_loaded_run_cannot_be_changed() -> None:
+@pytest.mark.parametrize("field", ["season", "tick", "seq"])
+@pytest.mark.parametrize("value", ["1", 1.5, True, None], ids=["string", "decimal", "bool", "null"])
+def test_rejects_an_event_position_that_is_not_a_whole_number(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    rows = records()
+    rows[2][field] = value
+
+    with pytest.raises(TelemetryError, match=rf":3: {field} must be a whole number"):
+        load_run(write(tmp_path, rows))
+
+
+def test_rejects_a_file_that_is_not_utf8(tmp_path: Path) -> None:
+    path = write(tmp_path, records())
+    path.write_bytes(path.read_bytes() + b"\xff\xfe\n")
+
+    with pytest.raises(TelemetryError, match=r"run\.jsonl: not valid UTF-8"):
+        load_run(path)
+
+
+def test_a_header_cut_off_partway_says_so(tmp_path: Path) -> None:
+    path = tmp_path / "run.jsonl"
+    path.write_text('{"type": "run_st', encoding="utf-8")
+
+    with pytest.raises(TelemetryError, match="cut off before its header was complete"):
+        load_run(path)
+
+
+def test_a_loaded_run_holds_its_events_in_a_tuple() -> None:
     run = load_run(COMPLETE)
 
     assert isinstance(run.events, tuple)

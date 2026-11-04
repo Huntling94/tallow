@@ -41,6 +41,32 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 - ADRs 0001 to 0004, the roadmap, the risk register and the process docs are merged.
 - Devlog entry 1 and the M0 review are written.
 
+## M1: Simulation core
+
+**Planning issue:** #33. The valley is a route graph: named routes made of segments, with defences placed on segments, and the herd choosing a route by multinomial logit. One M1 run is a 5-season mini-run in which money and defences carry over and breaches cost money. There is no town or Lamphouse yet.
+
+### Pull request sequence
+
+1. Data-path groundwork from the review of #28, and these exit criteria (#29)
+2. Routes and herd choice
+3. Defences and the night
+4. The top-down 2D viewer
+5. Harvest and one price
+6. Bots playing 10,000 seasons, with the GDD section 16 design contracts as tests
+7. The Python route-model fit, with a ground-truth recovery test
+8. The M1 review
+
+### Exit criteria
+
+- A headless 5-season mini-run plays end to end: a herd picks a route on the route graph by multinomial logit, the fence, pit and harpoon tower change both the odds and the outcome, kills are harvested and sold at one price, money and defences carry over, and breaches cost money.
+- The same seed and the same commands give byte-identical telemetry, checked by golden-seed tests in CI.
+- Bots with at least three distinct strategies play 10,000 seasons, and the results are summarised in a report.
+- The GDD section 16 contracts that apply to M1 run as tests in CI: a sensible defence survives season 1 on 95% of seeds; no single tower type dominates; neither all-defence nor all-harvest spending is best. Exact thresholds go in each spec.
+- Python fits the route-choice model on bot telemetry and recovers the true parameters within a stated tolerance, tested in CI against a known ground truth.
+- A top-down 2D viewer in the Godot project replays a season on the route graph from simulation state, with no rules of its own.
+- The telemetry data dictionary lists every M1 event and field.
+- The M1 review answers the milestone question, including whether a dominant strategy was found.
+
 ## Later milestones
 
 Each later milestone gets its exit criteria written at its planning session, from its question. This page is updated at every milestone start and review.

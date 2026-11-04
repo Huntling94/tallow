@@ -68,6 +68,49 @@ func test_line_endings_do_not_change_the_rules_version() -> void:
 	assert_str(RulesVersion.compute([folder])).is_equal(unix)
 
 
+func test_a_missing_rules_folder_gives_no_rules_version() -> void:
+	var folder := OUT.path_join("rules")
+	_write(folder.path_join("herd.gd"), "var size := 8\n")
+	assert_str(RulesVersion.compute([folder, OUT.path_join("missing")])).is_empty()
+	(
+		assert_error(func() -> void: RulesVersion.compute([OUT.path_join("missing")]))
+		. is_push_error("RulesVersion: cannot open %s" % OUT.path_join("missing"))
+	)
+
+
+func test_a_run_with_a_missing_rules_folder_writes_nothing() -> void:
+	var path := OUT.path_join("a.jsonl")
+	var result := HeadlessRun.run(42, 3, path, [OUT.path_join("missing")])
+	assert_int(result).is_equal(ERR_FILE_NOT_FOUND)
+	assert_bool(FileAccess.file_exists(path)).is_false()
+
+
+func test_the_default_rules_folders_are_found() -> void:
+	var version := RulesVersion.compute()
+	assert_int(version.length()).is_equal(16)
+	assert_bool(version.is_valid_hex_number()).is_true()
+
+
+func test_markdown_files_do_not_change_the_rules_version() -> void:
+	var folder := OUT.path_join("rules")
+	_write(folder.path_join("herd.gd"), "var size := 8\n")
+	_write(folder.path_join("README.md"), "Notes.\n")
+	var before := RulesVersion.compute([folder])
+	_write(folder.path_join("README.md"), "Different notes.\n")
+	assert_str(RulesVersion.compute([folder])).is_equal(before)
+
+
+func test_moving_a_file_between_folders_changes_the_rules_version() -> void:
+	var first := OUT.path_join("rules_a")
+	var second := OUT.path_join("rules_b")
+	_write(first.path_join("herd.gd"), "var size := 8\n")
+	_write(second.path_join("route.gd"), "var width := 2\n")
+	var before := RulesVersion.compute([first, second])
+	DirAccess.remove_absolute(first.path_join("herd.gd"))
+	_write(second.path_join("herd.gd"), "var size := 8\n")
+	assert_str(RulesVersion.compute([first, second])).is_not_equal(before)
+
+
 func test_the_run_id_follows_rules_version_seed_and_settings() -> void:
 	var settings := {"valley": "grey_box"}
 	var id := TelemetryWriter.run_id("abc", 42, settings)
