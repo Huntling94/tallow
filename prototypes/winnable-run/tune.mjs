@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
 const rules = html.slice(html.indexOf('// RULES-START'), html.indexOf('// RULES-END'));
-const api = new Function(`${rules}; return { TUNE, DEFENCES, ROADS, SPOTS, SPOT, OUT, newRun, place, startNight, stepNight, nextSeason, oddsAt };`)();
-const { TUNE, DEFENCES, ROADS, SPOTS, SPOT, OUT, newRun, place, startNight, stepNight, nextSeason, oddsAt } = api;
+const api = new Function(`${rules}; return { TUNE, DEFENCES, ROADS, SPOTS, OUT, newRun, place, startNight, stepNight, nextSeason, oddsAt };`)();
+const { TUNE, DEFENCES, ROADS, SPOTS, OUT, newRun, place, startNight, stepNight, nextSeason, oddsAt } = api;
 
 const PADS = SPOTS.filter((s) => s.kind === 'pad');
 const MARKS = SPOTS.filter((s) => s.kind === 'road');

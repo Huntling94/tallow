@@ -89,7 +89,7 @@ const TUNE = {
   shallowsSlow: 0.55,
   shotSpeed: 190,
   potSeconds: 0.9,
-  hillRange: 1.35,
+  hillRange: 1.15,
   sellBack: 0.5,
 };
 
@@ -183,8 +183,8 @@ function rangeOf(spot, type) { return DEFENCES[type].range * (spot.hill ? TUNE.h
 const SPOTS = [];
 const PADS = [
   [150, 170], [150, 232], [214, 150], [214, 250], [292, 104], [292, 296], [345, 150], [345, 256],
-  [400, 205], [440, 150], [440, 250], [345, 374], [150, 104], [150, 296],
-  [278, 202, true], [404, 92, true], [404, 318, true],
+  [446, 182], [440, 150], [440, 250], [345, 374], [150, 104], [150, 296],
+  [278, 202, true], [404, 125, true], [404, 280, true],
 ];
 for (const [x, y, hill] of PADS) {
   const spot = { id: `p${SPOTS.length}`, kind: 'pad', x, y, hill: !!hill, h: hill ? 15 : 0, reach: { tower: [], mortar: [] } };
@@ -1399,6 +1399,7 @@ $('speed').onclick = () => { speed = speed === 1 ? 2 : 1; refresh(); };
 $('sound').onclick = () => { soundOn = !soundOn; refresh(); };
 $('again').onclick = start;
 window.addEventListener('keydown', (e) => {
+  if (!run) return;
   if (e.code === 'Space') { e.preventDefault(); if (!run.over) release(); }
   const key = Object.keys(DEFENCES)[Number(e.key) - 1];
   if (key) choose(key);
@@ -1435,6 +1436,7 @@ if (!gl) {
   $('endTitle').textContent = 'This browser cannot show 3D';
   $('endBody').textContent = 'The prototype needs WebGL2.';
   $('again').hidden = true;
+  $('bar').hidden = true;
 } else {
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);
