@@ -5,8 +5,8 @@ Simulation first, then the 3D defence, then everything that makes it a town. Eac
 | Milestone | What gets built | The question it answers |
 |---|---|---|
 | **M0 Foundations** | Public repo, governance, process docs, ADRs, CI, Godot and Python skeletons, a walking skeleton | Does one real PR pass the whole loop end to end? |
-| **M1 Simulation core** | Headless season sim: herd, routes, three defences, harvest, one price. Bots play 10,000 seasons. The first route model is fitted on telemetry and recovers the true parameters. | Does committing under uncertainty create interesting choices? Is there a dominant strategy? |
-| **M2 Bare 3D defence** | One valley, one beast, fence, pit and harpoon tower, the command view, five seasons, grey boxes | Is one night fun to watch and fiddle with? |
+| **M1 Simulation core** | Headless season sim: individual beasts on a road network, defences, harvest, one price. Bots play 10,000 seasons. The first route model is fitted on telemetry and recovers the true parameters. | Does committing under uncertainty create interesting choices? Is there a dominant strategy? |
+| **M2 3D defence** | The simulation's tower defence in Godot: one valley, the command view, a build menu, five seasons, grey boxes. Prototype #58 showed the shape and is rebuilt, not promoted. | Does the real game keep what made the prototype worth keeping? |
 | **M3 Economy** | The exchange with supply-driven price, clean vs damaged kills, storage costs | Does selling create decisions or admin? |
 | **M4 Town, breach and the run** | Wall, garrison, district damage, the Lamphouse, a 12-season run with win, loss and score | Does the slow dread work? Are runs worth finishing? |
 | **M5 Wow and the wall** | The dusk cold open, the first-person harpoon on the wall | Does it impress in five seconds? Does the wall add agency? |
@@ -43,7 +43,7 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 
 ## M1: Simulation core
 
-**Planning issue:** #33. The valley is a route graph: named routes made of segments, with defences placed on segments, and the herd choosing a route by multinomial logit. One M1 run is a 5-season mini-run in which money and defences carry over and breaches cost money. There is no town or Lamphouse yet.
+**Planning issue:** #33, changed by the [winnable run prototype](../prototypes/0058-winnable-run.md) and [ADR-0005](../adr/0005-beasts-choose-at-forks.md). The valley is a road network. Individual beasts come through one or more entrances and choose at each fork by multinomial logit. One M1 run is a 5-season mini-run in which money and defences carry over and breaches cost town. The town is one number here, with no districts or Lamphouse yet.
 
 ### Pull request sequence
 
@@ -53,20 +53,22 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 4. The top-down 2D viewer
    - 4a. Placing defences in the viewer (#51), brought forward from M2's command view so that a person plays the choice before the bots balance it
 5. Harvest and one price
-6. Bots playing 10,000 seasons, with the GDD section 16 design contracts as tests
-7. The Python route-model fit, with a ground-truth recovery test
-8. The M1 review
+6. The road network and entrances, replacing the braided valley (#54, PR #55), with choice at each fork
+7. Beasts and towers in fixed ticks, with the viewer showing them
+8. Bots playing 10,000 seasons, with the GDD section 16 design contracts as tests. They settle first whether steering pays (#46).
+9. The Python route-model fit, with a ground-truth recovery test
+10. The M1 review
 
 ### Exit criteria
 
-- A headless 5-season mini-run plays end to end: a herd picks a route on the route graph by multinomial logit, the fence, pit and harpoon tower change both the odds and the outcome, kills are harvested and sold at one price, money and defences carry over, and breaches cost money.
+- A headless 5-season mini-run plays end to end: beasts come through known entrances and choose at each fork of the road network by multinomial logit, the fence, pit and harpoon tower change both the odds and the outcome, kills are harvested and sold at one price, money and defences carry over, breaches cost town, and the run ends when the town falls.
 - The same seed and the same commands give byte-identical telemetry, checked by golden-seed tests in CI.
 - Bots with at least three distinct strategies play 10,000 seasons, and the results are summarised in a report.
 - The GDD section 16 contracts that apply to M1 run as tests in CI: a sensible defence survives season 1 on 95% of seeds; no single tower type dominates; neither all-defence nor all-harvest spending is best. Exact thresholds go in each spec.
-- Python fits the route-choice model on bot telemetry and recovers the true parameters within a stated tolerance, tested in CI against a known ground truth.
-- A top-down 2D viewer in the Godot project replays a season on the route graph from simulation state, with no rules of its own.
+- Python fits the fork-choice model on bot telemetry and recovers the true parameters within a stated tolerance, tested in CI against a known ground truth.
+- A top-down 2D viewer in the Godot project replays a season on the road network from simulation state, with no rules of its own.
 - The telemetry data dictionary lists every M1 event and field.
-- The M1 review answers the milestone question, including whether a dominant strategy was found.
+- The M1 review answers the milestone question, including whether a dominant strategy was found and whether steering the herd pays.
 
 ## Later milestones
 
