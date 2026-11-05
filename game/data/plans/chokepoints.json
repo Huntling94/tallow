@@ -1,0 +1,9 @@
+{
+  "id": "chokepoints",
+  "seasons": {
+    "1": [
+      {"command": "build", "defence": "harpoon_tower", "segment": "neck_pass"},
+      {"command": "build", "defence": "harpoon_tower", "segment": "town_approach"}
+    ]
+  }
+}

@@ -1,9 +1,9 @@
 class_name SeasonRun
 extends RefCounted
-## A run of seasons (specs 0037 and 0040). Each season: the levy is paid, the
-## season's commands are applied, a herd arrives and splits into bands, each
-## band chooses a route by multinomial logit, then the night is resolved.
-## Money and defences carry over in `state`.
+## A run of seasons (specs 0037, 0040 and 0044). Each season: the levy is paid,
+## the season's commands are applied, a herd arrives and splits into bands,
+## each band chooses a route by multinomial logit, the night is resolved, then
+## the kills are harvested and sold. Money and defences carry over in `state`.
 
 var state: RunState
 
@@ -77,6 +77,7 @@ func play_season(commands: Array) -> Array[Dictionary]:
 			killed += 1
 		elif event["type"] == "breach":
 			breached += event["beasts"]
+	var harvest := Harvest.resolve(_setup.rules, state, killed, last_tick)
 	var ended := {
 		"type": "season_ended",
 		"tick": last_tick,
@@ -88,6 +89,7 @@ func play_season(commands: Array) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	events.append_array(tick_zero)
 	events.append_array(night)
+	events.append(harvest)
 	events.append(ended)
 	return _number(events)
 

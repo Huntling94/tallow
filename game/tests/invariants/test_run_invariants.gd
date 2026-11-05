@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
-## Spec 0040, AC5 and AC7: over many seeds and plans, beasts and money always
-## add up, and events keep their order.
+## Spec 0040, AC5 and AC7, and spec 0044, AC4: over many seeds and plans,
+## beasts and money always add up, and events keep their order.
 
 const SEEDS := 60
 const SEASONS := 5
@@ -14,6 +14,7 @@ func before() -> void:
 	_plans = [
 		{},
 		GameData.load_plan("demo"),
+		GameData.load_plan("chokepoints"),
 		{
 			1:
 			[
@@ -45,7 +46,7 @@ func test_every_band_is_either_killed_or_breaches() -> void:
 				assert_int(killed.get(key, 0) + breached.get(key, 0)).is_equal(sizes[key])
 
 
-func test_money_follows_the_levy_costs_and_breaches() -> void:
+func test_money_follows_the_levy_costs_breaches_and_harvest() -> void:
 	for plan: Dictionary in _plans:
 		for run_seed: int in range(1, SEEDS + 1):
 			var money := _setup.rules.start_money
@@ -60,6 +61,9 @@ func test_money_follows_the_levy_costs_and_breaches() -> void:
 					"breach":
 						money -= event["cost"]
 						assert_int(event["money"]).is_equal(money)
+					"harvest":
+						money += event["income"]
+						assert_int(event["money"]).is_equal(money)
 					"season_ended":
 						assert_int(event["money"]).is_equal(money)
 
@@ -68,12 +72,14 @@ func test_season_totals_match_the_night() -> void:
 	for run_seed: int in range(1, SEEDS + 1):
 		var killed := 0
 		var breached := 0
-		for event: Dictionary in _run(run_seed, _plans[2]):
+		for event: Dictionary in _run(run_seed, _plans[3]):
 			match event["type"]:
 				"beast_killed":
 					killed += 1
 				"breach":
 					breached += event["beasts"]
+				"harvest":
+					assert_int(event["beasts"]).is_equal(killed)
 				"season_ended":
 					assert_int(event["killed"]).is_equal(killed)
 					assert_int(event["breached"]).is_equal(breached)

@@ -37,15 +37,15 @@ Every record between the header and the summary has these.
 
 ## Order within a season
 
-Tick 0 is the prepare phase and the herd's choice: `season_started`, then any `command_applied` or `command_rejected` in the order given, then `herd_arrived`, `route_options` and one `route_chosen` per band. The night runs from tick 1: `beast_killed` and `breach` in tick order. `season_ended` comes last, on the night's last tick.
+Tick 0 is the prepare phase and the herd's choice: `season_started`, then any `command_applied` or `command_rejected` in the order given, then `herd_arrived`, `route_options` and one `route_chosen` per band. The night runs from tick 1: `beast_killed` and `breach` in tick order. `harvest` and then `season_ended` come last, both on the tick of the night's last event, or tick 1 if the night had none.
 
 ## `season_started`
 
-The season begins and the levy is paid. One per season, first in the season.
+The season begins and any levy is paid. One per season, first in the season.
 
 | Field | Type | Meaning | Since |
 |---|---|---|---|
-| `levy` | int | Money added this season (a placeholder for income until harvest) | 0040 |
+| `levy` | int | Money added this season by the `season_levy` rule; 0 in the shipped data since 0044 | 0040 |
 | `money` | int | Money after the levy | 0040 |
 
 ## `command_applied`
@@ -125,9 +125,21 @@ A band's surviving beasts reached the town gate. At most one per band; none if t
 | `cost` | int | Money lost: beasts × the breach cost per beast | 0040 |
 | `money` | int | Money after the breach; may be below zero | 0040 |
 
+## `harvest`
+
+The season's kills become goods, and the goods sell at one price. One per season, after the night, even if nothing was killed.
+
+| Field | Type | Meaning | Since |
+|---|---|---|---|
+| `beasts` | int | Beasts killed this season; matches the season's `beast_killed` records | 0044 |
+| `goods` | int | Goods made: beasts × goods per beast | 0044 |
+| `price` | int | Money for each good | 0044 |
+| `income` | int | Money earned: goods × price | 0044 |
+| `money` | int | Money after the sale | 0044 |
+
 ## `season_ended`
 
-The season is over. One per season, last in the season, on the night's last tick.
+The season is over. One per season, last in the season, on the same tick as `harvest`.
 
 | Field | Type | Meaning | Since |
 |---|---|---|---|

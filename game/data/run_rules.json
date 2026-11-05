@@ -1,7 +1,9 @@
 {
-  "start_money": 300,
-  "season_levy": 100,
+  "start_money": 600,
+  "season_levy": 0,
   "breach_cost_per_beast": 10,
   "beast_speed_m_per_tick": 400,
-  "band_spacing_ticks": 1
+  "band_spacing_ticks": 1,
+  "goods_per_beast": 4,
+  "price_per_good": 5
 }
