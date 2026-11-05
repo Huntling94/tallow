@@ -8,7 +8,7 @@ The maintainer played the build at commit `4d79774` and chose to keep it. Asked 
 
 The code in this PR is not exactly that build, and has not been replayed. After the keep call, a review led to changes: runners now really ignore fences, two hill pads and one other pad moved, and hills lost some range.
 
-Tallow's season should play as a tower defence: spaced-out beasts, visible combat, a few distinct defences, and herds you steer rather than only shoot.
+Tallow's season should play as a tower defence: spaced-out beasts, visible combat, a few distinct defences, and herds that choose their own roads.
 
 The prototype code is not promoted. Whatever is kept is rebuilt through the full loop.
 
@@ -17,7 +17,7 @@ The prototype code is not promoted. Whatever is kept is rebuilt through the full
 - The issue asked whether a winnable run with a night action makes a season fun.
 - That is not what ended up being tested. The maintainer found the first build too complex and short on feedback, so the prototype was rebuilt twice.
 - Signal fires, the night action in the issue, were cut. Building during a herd took their place.
-- The question it answered in the end: does a season work as a 3D tower defence in which beasts choose their own roads? On the build played, the maintainer's answer was yes. Whether choosing roads adds real strategy is still open, as set out below.
+- The question it answered in the end: does a season work as a 3D tower defence in which beasts choose their own roads? The maintainer kept the build that tested it, without answering that question separately. Whether choosing roads adds real strategy is still open, as set out below.
 - The five-route valley also went, replaced by a new road network. The score became the town and money left, shown on the win screen.
 
 ## What was built
@@ -56,7 +56,7 @@ Steering is the design's core idea, and it leads here, but that lead proved frag
 
 1. **Steering must be stronger than shooting's side effect.** With towers scary enough to matter, stacked scare drove herds off the defended roads and the funnelling bot won 0% of runs. Towers now scare a third as much, and fences do the steering.
 2. **Firepower has to be scarce.** With a tower reaching two roads, or money for every pad, plain spreading beat steering. One road per tower and tight money reversed that on the earlier map. The final map dropped that limit: a tower pad reaches 1 to 6 roads, so spreading stays strong.
-3. **Stretches every beast must walk defeat steering.** Build spots stay out of reach of the last stretch and the fork areas of the early maps. This is the same problem as #46.
+3. **Stretches every beast must walk defeat steering.** Build spots stay out of reach of the last stretch and the fork areas of the early maps. This is the same problem as #46. The final map breaks this slightly: a mortar on the pad moved to (446,182) reaches the start of the last road. The rebuild should not copy that.
 4. **Steering's lead moves with small changes.** The build played had a bug: runners were meant to ignore fences, but were still slowed and partly turned by them. Fixing it took funnelling level with sensible play, 88% to 89%. Moving three pads and cutting hill range restored the lead, 93% to 84%. So the lead depends on map details, and the funnelling bot is crude. Treat steering as not yet proven.
 
 ## What is not proven
