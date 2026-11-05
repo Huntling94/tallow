@@ -87,6 +87,22 @@ func test_a_season_not_yet_played_cannot_be_picked() -> void:
 	assert_int(viewer.season).is_equal(1)
 
 
+func test_the_odds_rows_count_the_bands_on_each_route_during_the_night() -> void:
+	var viewer := _watching()
+	var counts := {}
+	for event: Dictionary in viewer.events():
+		if event["type"] == "route_chosen":
+			counts[event["route"]] = counts.get(event["route"], 0) + 1
+	var rows := viewer.get_node("%Odds").get_children()
+	var setup := _setup()
+	for index: int in rows.size():
+		var route_id := setup.graph.route_ids[index]
+		var count: int = counts.get(route_id, 0)
+		var word := "band" if count == 1 else "bands"
+		var text := (rows[index].get_child(0) as Label).text
+		assert_str(text).ends_with(" · %d %s" % [count, word])
+
+
 func test_the_new_run_button_starts_again_on_the_same_seed() -> void:
 	var viewer := _viewer()
 	viewer.pick_defence("fence")

@@ -298,7 +298,8 @@ func _show_odds(routes: Array) -> void:
 		(_odds_bars[route_id] as ProgressBar).value = percent
 		var text := "%s  %.0f%%" % [_setup.graph.route_name(route_id), percent]
 		if not is_preparing():
-			text += " · %d bands" % _replay.bands_on_route(route_id)
+			var bands := _replay.bands_on_route(route_id)
+			text += " · %d band%s" % [bands, "" if bands == 1 else "s"]
 		(_odds_labels[route_id] as Label).text = text
 
 

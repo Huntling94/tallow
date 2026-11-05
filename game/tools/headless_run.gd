@@ -12,19 +12,20 @@ const SETTINGS := {
 
 ## Runs `seasons` seasons from `run_seed` and writes the telemetry to
 ## `out_path`. `plan_id` names a scripted plan in game/data/plans, or "" for
-## no commands. Returns OK or the error that stopped it. `rule_folders` is
-## only overridden by tests.
+## no commands. `valley_id` names a valley in game/data/valleys. Returns OK or
+## the error that stopped it. `rule_folders` is only overridden by tests.
 static func run(
 	run_seed: int,
 	seasons: int,
 	out_path: String,
 	rule_folders: PackedStringArray = RulesVersion.RULE_FOLDERS,
-	plan_id: String = ""
+	plan_id: String = "",
+	valley_id: String = SETTINGS["valley"]
 ) -> Error:
 	var rules_version := RulesVersion.compute(rule_folders)
 	if rules_version.is_empty():
 		return ERR_FILE_NOT_FOUND
-	var setup := GameData.load_setup(SETTINGS["valley"], SETTINGS["herd_personality"])
+	var setup := GameData.load_setup(valley_id, SETTINGS["herd_personality"])
 	if setup == null:
 		return ERR_INVALID_DATA
 	var plan := {}
@@ -33,6 +34,7 @@ static func run(
 		if plan.is_empty():
 			return ERR_INVALID_DATA
 	var settings := SETTINGS.duplicate()
+	settings["valley"] = valley_id
 	settings["seasons"] = seasons
 	settings["bot_strategy"] = plan_id if plan_id != "" else "none"
 	var season_run := SeasonRun.new(setup, RandomStreams.new(run_seed))

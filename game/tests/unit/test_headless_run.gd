@@ -140,15 +140,33 @@ func test_a_run_with_the_demo_plan_builds_defences() -> void:
 
 func test_a_run_with_the_chokepoints_plan_writes_harvests_at_schema_1() -> void:
 	var path := OUT.path_join("chokepoints.jsonl")
-	assert_int(HeadlessRun.run(42, 5, path, RulesVersion.RULE_FOLDERS, "chokepoints")).is_equal(OK)
+	var folders := RulesVersion.RULE_FOLDERS
+	assert_int(HeadlessRun.run(42, 5, path, folders, "chokepoints", "grey_box")).is_equal(OK)
 	var harvests := 0
+	var beasts := 0
+	var rejected := 0
 	var lines := FileAccess.get_file_as_string(path).strip_edges().split("\n")
 	for line: String in lines:
 		var record: Dictionary = JSON.parse_string(line)
 		assert_int(int(record["schema_version"])).is_equal(1)
-		if record["type"] == "harvest":
+		if record["type"] == "run_start":
+			assert_str(record["settings"]["valley"]).is_equal("grey_box")
+		elif record["type"] == "harvest":
 			harvests += 1
+			beasts += int(record["beasts"])
+		elif record["type"] == "command_rejected":
+			rejected += 1
 	assert_int(harvests).is_equal(5)
+	assert_int(rejected).is_equal(0)
+	assert_int(beasts).is_greater(0)
+
+
+func test_an_unknown_valley_stops_the_run() -> void:
+	var path := OUT.path_join("no_valley.jsonl")
+	var folders := RulesVersion.RULE_FOLDERS
+	assert_int(HeadlessRun.run(42, 1, path, folders, "", "no_such_valley")).is_equal(
+		ERR_INVALID_DATA
+	)
 
 
 func test_the_run_id_follows_rules_version_seed_and_settings() -> void:

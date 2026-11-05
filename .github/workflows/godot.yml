@@ -73,7 +73,7 @@ jobs:
           "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- \
             --seed 42 --seasons 3 --out ../telemetry/run_42.jsonl
           "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- --seed 42 --plan demo --out ../telemetry/demo_42.jsonl
-          "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- --seed 42 --plan chokepoints --out ../telemetry/chokepoints_42.jsonl
+          "$GODOT" --headless --path game -s res://tools/headless_runner.gd -- --seed 42 --plan chokepoints --valley grey_box --out ../telemetry/chokepoints_42.jsonl
 
       - name: Check the runs with Python
         run: |

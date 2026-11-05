@@ -8,6 +8,6 @@ Balance tables and fitted coefficients as versioned JSON, read by the data loade
 | `herds/` | One herd personality per file: route-choice weights and herd and band sizes (spec 0037) | `GameData.load_herd` |
 | `defences.json` | Fence, pit and harpoon tower: cost, threat, kill chance in parts per million, and capacity per night (spec 0040) | `GameData.load_defences` |
 | `run_rules.json` | Starting money, the season levy, breach cost per beast, beast speed, band spacing (spec 0040), goods per beast and the price per good (spec 0044) | `GameData.load_run_rules` |
-| `plans/` | Scripted commands by season for the headless runner's `--plan` option: `demo` (spec 0040) and `chokepoints` (spec 0044) | `GameData.load_plan` |
+| `plans/` | Scripted commands by season for the headless runner's `--plan` option: `demo` (spec 0040) and `chokepoints` (spec 0044, which needs `--valley grey_box`, because `braided` closes its segments) | `GameData.load_plan` |
 
 The numbers in these files are placeholders until the balance work in M1 step 6.

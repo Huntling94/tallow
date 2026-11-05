@@ -86,7 +86,8 @@ func features(route_id: String, threat_by_segment: Dictionary = {}) -> Dictionar
 	return totals
 
 
-## Problems that make the graph unusable, one line each, naming the route.
+## Problems that make the graph unusable, one line each, naming the route or
+## segment.
 ## Empty when every route is a connected chain from the entry to the gate.
 func errors() -> PackedStringArray:
 	var found := _problems.duplicate()

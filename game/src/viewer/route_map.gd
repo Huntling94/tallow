@@ -165,17 +165,25 @@ func _draw_hover() -> void:
 	draw_polyline(points, ValleyLayout.LAMP_COLOR, HOVER_WIDTH * _scale(), true)
 
 
-## An open ring on each segment with room for a defence.
-func _draw_open_spots() -> void:
+## The segments that get a ring: open ground with room for a defence, only
+## while picking.
+func open_spots() -> PackedStringArray:
+	var spots: PackedStringArray = []
 	if not _picking:
-		return
+		return spots
 	var defences: Dictionary = _frame["defences"]
 	for segment_id: String in _layout.drawn_segments():
 		if not _graph.is_closed(segment_id) and not defences.has(segment_id):
-			var centre := _to_screen(_layout.defence_spot(segment_id))
-			var radius := SPOT_RADIUS * _scale()
-			draw_circle(centre, radius, ValleyLayout.GROUND_COLOR)
-			draw_arc(centre, radius, 0.0, TAU, 20, ValleyLayout.LAMP_COLOR, 1.5, true)
+			spots.append(segment_id)
+	return spots
+
+
+func _draw_open_spots() -> void:
+	for segment_id: String in open_spots():
+		var centre := _to_screen(_layout.defence_spot(segment_id))
+		var radius := SPOT_RADIUS * _scale()
+		draw_circle(centre, radius, ValleyLayout.GROUND_COLOR)
+		draw_arc(centre, radius, 0.0, TAU, 20, ValleyLayout.LAMP_COLOR, 1.5, true)
 
 
 func _draw_hover_note() -> void:
