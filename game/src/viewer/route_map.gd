@@ -1,8 +1,11 @@
 class_name RouteMap
 extends Control
 ## Draws the valley from above: terrain, routes, defences, beasts and the
-## marks they leave. It only draws. Everything it shows arrives in `show_frame`
-## from a SeasonReplay, and nothing it does reaches the simulation.
+## marks they leave. Everything it shows arrives in `show_frame`, from a
+## SeasonReplay or a DefenceDraft, and nothing it does reaches the simulation.
+## While picking, a click on a route is passed on as a segment id.
+
+signal segment_pressed(segment_id: String)
 
 const ROUTE_WIDTH := 6.0
 const SHARED_WIDTH := 7.0
@@ -16,12 +19,17 @@ const BREACH_NOTE_TICKS := 3.0
 const GATE_GLOW_RADIUS := 20.0
 const LAMP_RADIUS := 7.0
 const KILL_SPREAD := Vector2(9.0, 7.0)
+## How near a route a click must land, in map units.
+const CLICK_TOLERANCE := 12.0
+const HOVER_WIDTH := 12.0
+const SPOT_RADIUS := 5.0
 
 var _layout: ValleyLayout
 var _graph: RouteGraph
 var _defence_types := {}
-var _replay: SeasonReplay
 var _frame := {}
+var _picking := false
+var _hover := ""
 
 
 ## Everything that stays the same for a run.
@@ -31,10 +39,43 @@ func set_run(setup: RunSetup, layout: ValleyLayout) -> void:
 	_layout = layout
 
 
-func show_frame(replay: SeasonReplay, frame: Dictionary) -> void:
-	_replay = replay
+func show_frame(frame: Dictionary) -> void:
 	_frame = frame
 	queue_redraw()
+
+
+## While picking, routes answer to the mouse and open segments are marked.
+func set_picking(picking: bool) -> void:
+	_picking = picking
+	_hover = ""
+	queue_redraw()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not _picking or _layout == null or _scale() <= 0.0:
+		return
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		var over := _segment_under(motion.position)
+		if over != _hover:
+			_hover = over
+			queue_redraw()
+		return
+	var click := event as InputEventMouseButton
+	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+		var segment_id := _segment_under(click.position)
+		if segment_id != "":
+			segment_pressed.emit(segment_id)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT and _hover != "":
+		_hover = ""
+		queue_redraw()
+
+
+func _segment_under(point: Vector2) -> String:
+	return _layout.segment_at(_to_sheet(point), CLICK_TOLERANCE)
 
 
 func _draw() -> void:
@@ -42,8 +83,10 @@ func _draw() -> void:
 	if _layout == null or _frame.is_empty() or _scale() <= 0.0:
 		return
 	_draw_terrain()
+	_draw_hover()
 	_draw_routes()
 	_draw_places()
+	_draw_open_spots()
 	_draw_defences()
 	_draw_kill_marks()
 	_draw_bands()
@@ -58,6 +101,11 @@ func _scale() -> float:
 func _to_screen(point: Vector2) -> Vector2:
 	var sheet := ValleyLayout.SHEET * _scale()
 	return (size - sheet) / 2.0 + point * _scale()
+
+
+func _to_sheet(point: Vector2) -> Vector2:
+	var sheet := ValleyLayout.SHEET * _scale()
+	return (point - (size - sheet) / 2.0) / _scale()
 
 
 func _draw_terrain() -> void:
@@ -92,8 +140,30 @@ func _draw_routes() -> void:
 	for segment_id: String in ValleyLayout.PATHS:
 		if _layout.is_shared(segment_id):
 			_draw_path(segment_id, SHARED_WIDTH)
-	for option: Dictionary in _replay.routes:
+	for option: Dictionary in _frame["routes"]:
 		_draw_route_label(option)
+
+
+func _draw_hover() -> void:
+	if _hover == "":
+		return
+	var points := PackedVector2Array()
+	for point: Vector2 in ValleyLayout.PATHS[_hover]:
+		points.append(_to_screen(point))
+	draw_polyline(points, ValleyLayout.LAMP_COLOR, HOVER_WIDTH * _scale(), true)
+
+
+## An open ring on each segment with room for a defence.
+func _draw_open_spots() -> void:
+	if not _picking:
+		return
+	var defences: Dictionary = _frame["defences"]
+	for segment_id: String in ValleyLayout.PATHS:
+		if _graph.has_segment(segment_id) and not defences.has(segment_id):
+			var centre := _to_screen(_layout.defence_spot(segment_id))
+			var radius := SPOT_RADIUS * _scale()
+			draw_circle(centre, radius, ValleyLayout.GROUND_COLOR)
+			draw_arc(centre, radius, 0.0, TAU, 20, ValleyLayout.LAMP_COLOR, 1.5, true)
 
 
 func _draw_path(segment_id: String, width: float) -> void:
@@ -130,23 +200,24 @@ func _draw_places() -> void:
 
 func _draw_defences() -> void:
 	var defences: Dictionary = _frame["defences"]
+	var fresh: Dictionary = _frame["new_defences"]
 	for segment_id: String in defences:
 		var defence_id: String = defences[segment_id]
 		var spot := _layout.defence_spot(segment_id)
-		_draw_defence_marker(spot, defence_id)
+		var color := ValleyLayout.LAMP_COLOR if fresh.has(segment_id) else ValleyLayout.DANGER_COLOR
+		_draw_defence_marker(spot, defence_id, color)
 		var defence: DefenceType = _defence_types[defence_id]
 		var note := defence.display_name.to_upper()
 		# Notes sit on the outer side of the map, clear of the other routes.
 		var west := spot.x < ValleyLayout.SHEET.x / 2.0
 		var at := spot + Vector2(-13 if west else 13, 4)
-		_draw_text(at, note, ValleyLayout.DANGER_COLOR, SMALL_SIZE, west)
+		_draw_text(at, note, color, SMALL_SIZE, west)
 
 
 ## A fence reads as a bar, a pit as a diamond and a tower as a triangle.
-func _draw_defence_marker(spot: Vector2, defence_id: String) -> void:
+func _draw_defence_marker(spot: Vector2, defence_id: String, color: Color) -> void:
 	var centre := _to_screen(spot)
 	var unit := _scale()
-	var color := ValleyLayout.DANGER_COLOR
 	match defence_id:
 		"fence":
 			draw_rect(Rect2(centre - Vector2(11, 3) * unit, Vector2(22, 6) * unit), color)

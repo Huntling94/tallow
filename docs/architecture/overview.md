@@ -138,6 +138,8 @@ flowchart TB
 
 **The dependency rule:** arrows into the simulation carry only commands and plain data. The simulation never loads files itself: the data loader, outside `game/src/sim/`, reads them and passes the values in. Presentation reads simulation state but never changes it, and nothing in `game/src/sim/` refers to presentation.
 
+**Previews.** To show what a choice would do before it is committed, presentation may run the simulation's own rules on a private copy of the state, as `DefenceDraft` does with `RunState` and `RouteChoice`. The copy never reaches the live run: only commands do. This is why the diagram has no arrow for it.
+
 ## 4. Dynamic view: one season
 
 **Shows:** the order of interactions during one season. **Leaves out:** the detail of each rule.
@@ -254,7 +256,7 @@ Because the simulation knows the truth, every model in the repository can be che
 | Layer | Where | Does | Never does |
 |---|---|---|---|
 | Simulation | `game/src/sim/` | Owns every game rule and all game state. Advances in fixed ticks from commands and a seed. Emits events. | Touch scenes, nodes, rendering, input, files or the wall clock. Use unseeded randomness. |
-| Presentation | `game/src/world/`, `camera/`, `player/`, `ui/`, `viewer/` | Shows simulation state in 3D (and in the top-down 2D viewer, which replays a run it plays itself), animates between ticks, turns player input into commands. | Change simulation state directly. |
+| Presentation | `game/src/world/`, `camera/`, `player/`, `ui/`, `viewer/` | Shows simulation state in 3D (and in the top-down 2D viewer, where the player places defences and watches the night), animates between ticks, turns player input into commands. | Change simulation state directly. |
 | Headless runner | `game/tools/` | Runs seeded seasons with bots and no window. | Contain rules of its own. |
 | Data loader | `game/src/data/` | Reads game data files and passes the values to the simulation at the start of a run. | Hold or change game state. |
 | Telemetry writer | `game/src/telemetry/` | Turns simulation events into JSON Lines files. | Decide what happens in the game. |
@@ -270,7 +272,7 @@ game/                    Godot 4 project
   src/camera/            command view and first person
   src/player/            first-person controller and harpoon
   src/ui/                menus, HUD and theme
-  src/viewer/            top-down 2D replay of a season
+  src/viewer/            top-down 2D playable run: place defences, watch the night
   src/telemetry/         telemetry writer
   src/data/              data loader: reads game/data/ and passes values to the simulation
   scenes/                Godot scenes

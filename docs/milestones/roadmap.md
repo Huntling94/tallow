@@ -51,6 +51,7 @@ One simulation only: the authoritative simulation runs inside Godot, headless wh
 2. Routes and herd choice
 3. Defences and the night
 4. The top-down 2D viewer
+   - 4a. Placing defences in the viewer (#51), brought forward from M2's command view so that a person plays the choice before the bots balance it
 5. Harvest and one price
 6. Bots playing 10,000 seasons, with the GDD section 16 design contracts as tests
 7. The Python route-model fit, with a ground-truth recovery test
