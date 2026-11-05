@@ -4,7 +4,9 @@ Issue #58. Code: `prototypes/winnable-run/`.
 
 ## Verdict: keep
 
-The maintainer played the final build and chose to keep it. Tallow's season should play as a tower defence: spaced-out beasts, visible combat, a few distinct defences, and herds you steer rather than only shoot.
+The maintainer played the final build and chose to keep it. Asked directly about the issue's two tests, wanting another run and seasons 2 to 5 feeling like decisions, the maintainer said that was fine for now. So neither test is recorded as met or failed: the keep is a judgement on the build as a whole.
+
+Tallow's season should play as a tower defence: spaced-out beasts, visible combat, a few distinct defences, and herds you steer rather than only shoot.
 
 The prototype code is not promoted. Whatever is kept is rebuilt through the full loop.
 
@@ -15,7 +17,6 @@ The prototype code is not promoted. Whatever is kept is rebuilt through the full
 - Signal fires, the night action in the issue, were cut. Building during a herd took their place.
 - The question it answered in the end: does a season work as a 3D tower defence in which beasts choose their own roads? Yes.
 - The five-route valley also went, replaced by a new road network. The score became the town and money left, shown on the win screen.
-- The issue's two keep tests still apply: wanting another run, and seasons 2 to 5 feeling like decisions. The maintainer's answer to each is recorded under the verdict.
 
 ## What was built
 
