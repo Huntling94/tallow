@@ -148,8 +148,10 @@ func test_a_defence_too_dear_is_refused_and_changes_nothing() -> void:
 	var run := _run(setup)
 	run.state.money = 39
 	var draft := DefenceDraft.new(setup, run.state)
+	var odds := _shares(draft.odds())
 	assert_str(draft.place("fence", "ford_crossing")).is_equal("not_enough_money")
 	assert_int(draft.money()).is_equal(39)
+	assert_array(_shares(draft.odds())).is_equal(odds)
 	assert_array(draft.commands()).is_empty()
 
 

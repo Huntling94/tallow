@@ -18,6 +18,7 @@ const BAR_HEIGHT := 12.0
 const DEFENCE_TEXT_SIZE := 13
 const HINT_START := "Rings mark open segments. Click this season's defence to take it back."
 const HINT_PICK_FIRST := "Pick a defence first."
+const HINT_STANDING := "That defence stood through a night, so it stays."
 const REASONS := {
 	"segment_taken": "That segment already has a defence.",
 	"not_enough_money": "Not enough money for that defence.",
@@ -127,10 +128,9 @@ func press_segment(segment_id: String) -> void:
 		return
 	if _draft.remove(segment_id):
 		_hint.text = "Taken back."
-	elif _draft.defences().has(segment_id):
-		_hint.text = REASONS["segment_taken"]
 	elif _picked == "":
-		_hint.text = HINT_PICK_FIRST
+		var taken := _draft.defences().has(segment_id)
+		_hint.text = HINT_STANDING if taken else HINT_PICK_FIRST
 	else:
 		var reason := _draft.place(_picked, segment_id)
 		_hint.text = REASONS.get(reason, reason)
@@ -358,7 +358,7 @@ func _add_defence_buttons() -> void:
 static func _defence_text(defence: DefenceType) -> String:
 	var kills := "no kills"
 	if defence.kill_ppm > 0:
-		kills = "%d%% kill, %d a night" % [defence.kill_ppm / 10000, defence.capacity]
+		kills = "%.0f%% kill, %d a night" % [defence.kill_ppm / 10000.0, defence.capacity]
 	return "%s  %d · threat %d · %s" % [defence.display_name, defence.cost, defence.threat, kills]
 
 

@@ -203,7 +203,9 @@ func test_a_defence_it_cannot_afford_is_refused_and_the_panel_says_why() -> void
 	]:
 		_click(viewer, segment_id)
 	assert_str(_text(viewer, "%Totals")).contains("Money  0")
+	var odds := _odds_text(viewer)
 	_click(viewer, FORD)
+	assert_str(_odds_text(viewer)).is_equal(odds)
 	assert_str(_text(viewer, "%Hint")).contains("Not enough money")
 	assert_str(_text(viewer, "%Totals")).contains("Money  0")
 
@@ -292,7 +294,7 @@ func test_a_new_prepare_phase_carries_over_money_and_defences() -> void:
 	assert_bool(_frame(viewer)["defences"].has(FORD)).is_true()
 
 
-func test_a_standing_defence_clicked_with_nothing_picked_says_it_is_taken() -> void:
+func test_a_standing_defence_clicked_with_nothing_picked_says_it_stays() -> void:
 	var viewer := _viewer()
 	viewer.pick_defence("fence")
 	_click(viewer, FORD)
@@ -300,7 +302,7 @@ func test_a_standing_defence_clicked_with_nothing_picked_says_it_is_taken() -> v
 	viewer.show_season(2)
 	viewer.pick_defence("fence")
 	_click(viewer, FORD)
-	assert_str(_text(viewer, "%Hint")).contains("already")
+	assert_str(_text(viewer, "%Hint")).is_equal(SeasonViewer.HINT_STANDING)
 
 
 func test_a_played_season_can_be_watched_again_and_keeps_the_placements() -> void:

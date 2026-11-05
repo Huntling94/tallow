@@ -138,6 +138,8 @@ flowchart TB
 
 **The dependency rule:** arrows into the simulation carry only commands and plain data. The simulation never loads files itself: the data loader, outside `game/src/sim/`, reads them and passes the values in. Presentation reads simulation state but never changes it, and nothing in `game/src/sim/` refers to presentation.
 
+**Previews.** To show what a choice would do before it is committed, presentation may run the simulation's own rules on a private copy of the state, as `DefenceDraft` does with `RunState` and `RouteChoice`. The copy never reaches the live run: only commands do. This is why the diagram has no arrow for it.
+
 ## 4. Dynamic view: one season
 
 **Shows:** the order of interactions during one season. **Leaves out:** the detail of each rule.
