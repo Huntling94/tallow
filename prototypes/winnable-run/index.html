@@ -5,58 +5,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tallow: a winnable run (prototype)</title>
 <style>
-  :root { --ground:#121a1f; --panel:#19232a; --ink:#e4e6e1; --muted:#9aa5a3; --lamp:#f0a23c; --danger:#e0715f; --good:#7fc28f; --line:#2a3741; }
+  :root { --ground:#10181c; --panel:#19232a; --ink:#e4e6e1; --muted:#9aa5a3; --lamp:#f0a23c; --danger:#e0715f; --good:#7fc28f; --line:#2a3741; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   html, body { height:100%; margin:0; background:var(--ground); color:var(--ink); font:15px/1.4 system-ui, sans-serif; }
-  #app { display:flex; height:100%; gap:12px; padding:12px; }
-  #mapBox { flex:1; min-width:0; background:var(--panel); border-radius:6px; position:relative; }
+  #app { display:flex; flex-direction:column; height:100%; }
+  #hud { display:flex; align-items:center; gap:20px; padding:8px 14px; background:var(--panel); }
+  #season { color:var(--lamp); font-weight:600; }
+  #townBox { display:flex; align-items:center; gap:8px; flex:1; max-width:320px; min-width:130px; transition:transform .1s; }
+  #townBox.hit { transform:translateX(4px); }
+  .bar { flex:1; height:12px; background:#0e1417; border-radius:3px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--good); transition:width .2s; }
+  #moneyBox { font-weight:600; color:var(--lamp); min-width:70px; transition:transform .1s; }
+  #moneyBox.bump { transform:scale(1.2); }
+  #moneyBox.short { color:var(--danger); }
+  #mapBox { flex:1; min-height:0; position:relative; }
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
-  #side { width:330px; flex:none; display:flex; flex-direction:column; gap:10px; overflow:auto; }
-  h1 { font-size:18px; margin:0; color:var(--lamp); font-weight:600; }
-  .muted { color:var(--muted); font-size:13px; }
-  .heading { color:var(--muted); font-size:12px; letter-spacing:.04em; text-transform:uppercase; margin-bottom:2px; }
-  .stat { display:flex; justify-content:space-between; }
-  .bar { height:12px; background:#1e2a31; border-radius:3px; overflow:hidden; }
-  .bar i { display:block; height:100%; }
-  .row { display:grid; grid-template-columns:150px 1fr; align-items:center; gap:8px; font-size:13px; }
-  button { font:inherit; color:var(--ink); background:#22303a; border:1px solid var(--line); border-radius:4px; padding:7px 9px; cursor:pointer; text-align:left; }
+  #gl { pointer-events:none; }
+  #bar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:8px 14px; background:var(--panel); }
+  #hint { flex:1; min-width:180px; color:var(--muted); font-size:13.5px; }
+  button { font:inherit; color:var(--ink); background:#22303a; border:1px solid var(--line); border-radius:5px; padding:7px 11px; cursor:pointer; }
   button:hover { background:#2b3b46; }
   button.on { background:#3a2c17; border-color:var(--lamp); }
-  button.primary { color:var(--lamp); text-align:center; font-weight:600; }
-  button[disabled] { opacity:.45; cursor:default; }
-  .tools { display:flex; flex-direction:column; gap:4px; }
-  .controls { display:flex; gap:6px; }
-  #log { font-size:12.5px; color:var(--muted); flex:1; min-height:60px; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; }
-  #banner { padding:10px; background:#22303a; border-radius:6px; }
-  #banner b { color:var(--lamp); }
-  @media (max-width:760px) { #app { flex-direction:column; } #mapBox { min-height:52vh; } #side { width:100%; } }
+  button.poor { opacity:.5; }
+  button.primary { color:#1a1208; background:var(--lamp); border-color:var(--lamp); font-weight:600; min-width:140px; }
+  button.quiet { margin-left:auto; color:var(--muted); padding:4px 9px; font-size:13px; }
+  button .cost { color:var(--lamp); margin-left:6px; }
+  #end { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:#0b1114cc; text-align:center; padding:16px; }
+  #end h2 { margin:0; font-size:30px; color:var(--lamp); }
+  #end p { margin:0; color:var(--ink); }
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="mapBox"><canvas id="map"></canvas></div>
-  <div id="side">
-    <h1 id="title"></h1>
-    <div>
-      <div class="stat"><span>Town</span><span id="townText"></span></div>
-      <div class="bar"><i id="townBar" style="background:var(--good)"></i></div>
-    </div>
-    <div class="stat"><span>Money</span><span id="money"></span></div>
-    <div class="stat"><span>Herd</span><span id="herd"></span></div>
-    <div id="fireLine" class="stat"><span>Signal fires</span><span id="fires"></span></div>
-    <div>
-      <div class="heading">Route odds</div>
-      <div id="odds"></div>
-    </div>
-    <div id="prepare" class="tools"></div>
-    <div id="banner" hidden></div>
-    <div id="nightControls" class="controls" hidden>
-      <button id="pause">Pause</button>
-      <button id="speed">Speed 1×</button>
-    </div>
-    <div id="log"></div>
-    <button id="restart">New run</button>
+  <div id="hud">
+    <span id="season"></span>
+    <div id="townBox"><span>Town</span><div class="bar"><i id="townBar"></i></div><span id="townText"></span></div>
+    <div id="moneyBox"></div>
+    <button id="sound" class="quiet"></button>
+  </div>
+  <div id="mapBox">
+    <canvas id="gl"></canvas>
+    <canvas id="map"></canvas>
+    <div id="end" hidden><h2 id="endTitle"></h2><p id="endBody"></p><button class="primary" id="again">New run</button></div>
+  </div>
+  <div id="bar">
+    <span id="tools" style="display:flex;gap:6px"></span>
+    <span id="hint"></span>
+    <button id="speed">1×</button>
+    <button id="go" class="primary"></button>
   </div>
 </div>
 
@@ -64,65 +61,95 @@
 // RULES-START
 // Throwaway prototype rules. Nothing here is shared with game/.
 const TUNE = {
-  startMoney: 240,
-  levy: 120,
-  killReward: 15,
-  town: 60,
-  herds: [11, 14, 17, 20, 23],
-  bandMin: 3, bandMax: 6,
-  firesPerNight: 2,
-  fireSeconds: 6,
-  metresPerSecond: 330,
-  bandSpacing: 2.2,
-  weights: { length: -1.0, rough: -2.0, threat: -1.5 },
+  startMoney: 180,
+  seasonPay: 40,
+  killReward: 8,
+  town: 20,
+  herds: [8, 11, 14, 17, 20],
+  beastHealth: [2, 3, 4, 5, 7],
+  spawnEvery: 1.3,
+  firstSpawn: 1.4,
+  speed: 55,
+  bull: { health: 30, speed: 0.6, harm: 5, reward: 50 },
+  lengthShy: 1 / 90, // how much longer roads put beasts off
+  fenceReach: 26,
+  fenceSlow: 0.45,
+  shotSpeed: 190,
 };
 
 const DEFENCES = {
-  fence: { name: 'Drive fence', cost: 40, threat: 2, kill: 0, cap: 0 },
-  pit: { name: 'Pit trap', cost: 80, threat: 1, kill: 0.4, cap: 2 },
-  tower: { name: 'Harpoon tower', cost: 120, threat: 1, kill: 0.25, cap: 8 },
+  tower: { name: 'Tower', cost: 60, spot: 'pad', range: 72, reload: 0.7, damage: 1, scare: 0.6 },
+  pit: { name: 'Pit', cost: 30, spot: 'road', holds: 2, scare: 0 },
+  fence: { name: 'Fence', cost: 20, spot: 'road', scare: 1.6 },
 };
 
-const SEGMENTS = {
-  neck_pass: { len: 600, rough: 0.2, closed: true },
-  cairn_west: { len: 2200, rough: 0.1 },
-  cairn_south: { len: 1800, rough: 0.15 },
-  saddle: { len: 300, rough: 0.1 },
-  ridge_climb: { len: 1400, rough: 0.45 },
-  ridge_drop: { len: 1600, rough: 0.2 },
-  spur: { len: 700, rough: 0.4 },
-  ford_bank: { len: 1000, rough: 0.5 },
-  ford_crossing: { len: 600, rough: 1.0 },
-  ford_flats: { len: 1000, rough: 0.0 },
-  town_approach: { len: 400, rough: 0.1, closed: true },
-};
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
-const ROUTES = [
-  { id: 'cairn', name: 'Cairn Pass', segs: ['neck_pass', 'cairn_west', 'cairn_south', 'town_approach'] },
-  { id: 'saddle', name: 'The Saddle', segs: ['neck_pass', 'cairn_west', 'saddle', 'ridge_drop', 'town_approach'] },
-  { id: 'ridge', name: 'Split Ridge', segs: ['neck_pass', 'ridge_climb', 'ridge_drop', 'town_approach'] },
-  { id: 'spur', name: 'The Spur', segs: ['neck_pass', 'ridge_climb', 'spur', 'ford_flats', 'town_approach'] },
-  { id: 'ford', name: 'Low Ford', segs: ['neck_pass', 'ford_bank', 'ford_crossing', 'ford_flats', 'town_approach'] },
-];
+// Roads are curves through a few points. All three share the way in and the way out.
+const NECK = { x: 12, y: 200 }, FORK = { x: 90, y: 200 }, MERGE = { x: 530, y: 200 }, GATE = { x: 596, y: 200 };
 
-function utility(route, defences) {
-  const w = TUNE.weights;
-  let u = 0;
-  for (const id of route.segs) {
-    const s = SEGMENTS[id];
-    u += w.length * s.len / 1000 + w.rough * s.len * s.rough / 1000;
-    if (defences[id]) u += w.threat * DEFENCES[defences[id]].threat;
+function curve(points) {
+  const p = [FORK, ...points, MERGE].map((q) => ({ ...q }));
+  const out = [];
+  for (let i = 0; i < p.length - 1; i++) {
+    const a = p[Math.max(i - 1, 0)], b = p[i], c = p[i + 1], e = p[Math.min(i + 2, p.length - 1)];
+    for (let s = 0; s < 10; s++) {
+      const t = s / 10, t2 = t * t, t3 = t2 * t;
+      const mix = (k) => 0.5 * (2 * b[k] + (c[k] - a[k]) * t + (2 * a[k] - 5 * b[k] + 4 * c[k] - e[k]) * t2 + (3 * b[k] - a[k] - 3 * c[k] + e[k]) * t3);
+      out.push({ x: mix('x'), y: mix('y') });
+    }
   }
-  return u;
+  return out;
 }
 
-function oddsOf(routes, defences) {
-  const us = routes.map((r) => utility(r, defences));
-  const top = Math.max(...us);
-  const ws = us.map((u) => Math.exp(u - top));
-  const total = ws.reduce((a, b) => a + b, 0);
-  return ws.map((w) => w / total);
+function makeRoad(points) {
+  const pts = [NECK, ...curve(points), MERGE, GATE];
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1], pts[i]));
+  return { pts, cum, len: cum[cum.length - 1] };
 }
+
+const ROADS = [
+  makeRoad([{ x: 150, y: 112 }, { x: 250, y: 62 }, { x: 360, y: 70 }, { x: 455, y: 122 }]),
+  makeRoad([{ x: 170, y: 222 }, { x: 250, y: 178 }, { x: 330, y: 224 }, { x: 420, y: 180 }]),
+  makeRoad([{ x: 142, y: 290 }, { x: 240, y: 342 }, { x: 350, y: 334 }, { x: 452, y: 282 }]),
+];
+const ENTRY = dist(NECK, FORK);
+const EXIT = dist(MERGE, GATE);
+
+function pointOn(road, d) {
+  const { pts, cum } = road;
+  if (d <= 0) return pts[0];
+  if (d >= road.len) return pts[pts.length - 1];
+  let lo = 0, hi = cum.length - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid] <= d) lo = mid; else hi = mid; }
+  const t = (d - cum[lo]) / (cum[hi] - cum[lo]);
+  return { x: pts[lo].x + (pts[hi].x - pts[lo].x) * t, y: pts[lo].y + (pts[hi].y - pts[lo].y) * t };
+}
+
+function headingOn(road, d) {
+  const a = pointOn(road, d - 2), b = pointOn(road, d + 2);
+  return Math.atan2(b.y - a.y, b.x - a.x);
+}
+
+// Places to build. Pads sit beside roads and take towers; marks sit on a road and take pits or fences.
+const SPOTS = [];
+for (const [x, y] of [[205, 112], [300, 100], [385, 114], [300, 28], [215, 165], [285, 240], [300, 172], [385, 232], [205, 292], [300, 300], [395, 280], [300, 372]]) {
+  const spot = { id: `p${SPOTS.length}`, kind: 'pad', x, y, reach: [] };
+  ROADS.forEach((road, r) => {
+    for (let d = ENTRY; d < road.len - EXIT; d += 4) {
+      if (dist(spot, pointOn(road, d)) <= DEFENCES.tower.range) { spot.reach.push(r); break; }
+    }
+  });
+  SPOTS.push(spot);
+}
+ROADS.forEach((road, r) => {
+  for (const share of [0.3, 0.5, 0.7]) {
+    const d = road.len * share, p = pointOn(road, d);
+    SPOTS.push({ id: `r${r}${share * 10}`, kind: 'road', x: p.x, y: p.y, road: r, d, angle: headingOn(road, d), reach: [r] });
+  }
+});
+const SPOT = Object.fromEntries(SPOTS.map((s) => [s.id, s]));
 
 function pick(weights, rng) {
   let draw = rng();
@@ -147,455 +174,1008 @@ function makeRng(seed) { // mulberry32
 function newRun(seed) {
   return {
     seed, rng: makeRng(seed), season: 1, money: TUNE.startMoney, town: TUNE.town,
-    defences: {}, placed: [], kills: 0, breached: 0, night: null, over: null,
+    built: {}, fresh: [], tracks: [0, 0, 0], kills: 0, night: null, over: null,
   };
 }
 
-function canPlace(run, type, seg) {
-  if (SEGMENTS[seg].closed) return 'This ground cannot be built on.';
-  if (run.defences[seg]) return 'That segment already has a defence.';
-  if (run.money < DEFENCES[type].cost) return 'Not enough money for that.';
+// The odds are never shown: the player reads them from where the beasts walk.
+function scareOn(run, r) {
+  let total = 0;
+  for (const id of Object.keys(run.built)) {
+    if (SPOT[id].reach.includes(r)) total += DEFENCES[run.built[id].type].scare;
+  }
+  return total;
+}
+
+function oddsOf(run) {
+  const us = ROADS.map((road, r) => -road.len * TUNE.lengthShy - scareOn(run, r));
+  const top = Math.max(...us);
+  const ws = us.map((u) => Math.exp(u - top));
+  const total = ws.reduce((a, b) => a + b, 0);
+  return ws.map((w) => w / total);
+}
+
+function canPlace(run, type, id) {
+  const spot = SPOT[id], d = DEFENCES[type];
+  if (!spot || spot.kind !== d.spot || run.built[id]) return 'spot';
+  if (run.money < d.cost) return 'money';
   return '';
 }
 
-function place(run, type, seg) {
-  const reason = canPlace(run, type, seg);
+function place(run, type, id) {
+  const reason = canPlace(run, type, id);
   if (reason) return reason;
   run.money -= DEFENCES[type].cost;
-  run.defences[seg] = type;
-  run.placed.push(seg);
+  run.built[id] = { type, wait: 0, left: DEFENCES[type].holds || 0, aim: -Math.PI / 2, fired: -9 };
+  if (!run.night) run.fresh.push(id);
   return '';
 }
 
-function takeBack(run, seg) {
-  if (!run.placed.includes(seg)) return false;
-  run.money += DEFENCES[run.defences[seg]].cost;
-  delete run.defences[seg];
-  run.placed = run.placed.filter((s) => s !== seg);
+function takeBack(run, id) {
+  if (run.night || !run.fresh.includes(id)) return false;
+  run.money += DEFENCES[run.built[id].type].cost;
+  delete run.built[id];
+  run.fresh = run.fresh.filter((s) => s !== id);
   return true;
 }
 
 function herdSize(run) { return TUNE.herds[run.season - 1]; }
+function finalSeason(run) { return run.season === TUNE.herds.length; }
 
 function startNight(run) {
-  const odds = oddsOf(ROUTES, run.defences);
-  const bands = [];
-  let left = herdSize(run);
-  while (left > 0) {
-    const span = TUNE.bandMax - TUNE.bandMin + 1;
-    let size = Math.min(left, TUNE.bandMin + Math.floor(run.rng() * span));
-    if (left - size < TUNE.bandMin) size = left;
-    left -= size;
-    bands.push({
-      n: bands.length + 1, beasts: size, route: pick(odds, run.rng), at: 0,
-      metres: 0, starts: bands.length * TUNE.bandSpacing, gone: false, entered: false, turned: false,
-    });
+  const queue = [];
+  const health = TUNE.beastHealth[run.season - 1];
+  const size = herdSize(run);
+  for (let i = 0; i < size; i++) {
+    queue.push({ at: TUNE.firstSpawn + i * TUNE.spawnEvery, health, bull: false });
   }
-  const capacity = {};
-  for (const seg of Object.keys(run.defences)) capacity[seg] = DEFENCES[run.defences[seg]].cap;
-  run.placed = [];
-  run.night = { time: 0, bands, capacity, fires: {}, firesLeft: TUNE.firesPerNight, killed: 0, breached: 0, income: 0, marks: [] };
+  if (finalSeason(run)) queue.splice(size >> 1, 0, { at: TUNE.firstSpawn + (size >> 1) * TUNE.spawnEvery, health: TUNE.bull.health, bull: true });
+  run.fresh = [];
+  run.night = { time: 0, queue, beasts: [], shots: [], events: [], killed: 0, breached: 0, walked: [0, 0, 0], done: false, nextId: 1 };
 }
 
-function fireable(seg) {
-  return ['cairn_west', 'ridge_climb', 'ford_bank', 'cairn_south', 'saddle', 'ridge_drop', 'spur'].includes(seg);
+function placeOf(b) {
+  const road = ROADS[b.road];
+  const p = pointOn(road, b.d), a = headingOn(road, b.d);
+  const fade = Math.min(1, b.d / 60, (road.len - b.d) / 60);
+  return { x: p.x - Math.sin(a) * b.off * fade, y: p.y + Math.cos(a) * b.off * fade, a };
 }
 
-function lightFire(run, seg) {
+function slay(run, b, how) {
+  const n = run.night, at = placeOf(b);
+  b.dead = true;
+  const reward = b.bull ? TUNE.bull.reward : TUNE.killReward;
+  run.money += reward;
+  run.kills += 1;
+  n.killed += 1;
+  n.events.push({ kind: how, x: at.x, y: at.y, a: at.a, reward, bull: b.bull });
+}
+
+function moveBeast(run, b, dt) {
   const n = run.night;
-  if (!n || n.firesLeft <= 0 || !fireable(seg) || n.fires[seg] > n.time) return false;
-  n.fires[seg] = n.time + TUNE.fireSeconds;
-  n.firesLeft -= 1;
-  return true;
-}
-
-// A band about to enter a burning segment turns onto another route that shares
-// the road so far and avoids the fire.
-function turnAside(run, band) {
-  const n = run.night;
-  const route = ROUTES[band.route];
-  const next = route.segs[band.at];
-  if (!(n.fires[next] > n.time)) return;
-  const walked = route.segs.slice(0, band.at);
-  const options = ROUTES.filter((r) => walked.every((s, i) => r.segs[i] === s) && !(n.fires[r.segs[band.at]] > n.time));
-  if (!options.length) return;
-  const chosen = options[pick(oddsOf(options, run.defences), run.rng)];
-  band.route = ROUTES.indexOf(chosen);
-  band.turned = true;
-}
-
-function enter(run, band, seg) {
-  const n = run.night;
-  const type = run.defences[seg];
-  if (!type) return;
-  const d = DEFENCES[type];
-  for (let i = band.beasts; i > 0; i--) {
-    if (n.capacity[seg] <= 0 || d.kill <= 0) break;
-    if (run.rng() < d.kill) {
-      band.beasts -= 1;
-      n.capacity[seg] -= 1;
-      n.killed += 1;
-      n.marks.push({ seg, time: n.time, kind: 'kill' });
+  let pace = TUNE.speed * (b.bull ? TUNE.bull.speed : 1);
+  for (const id of Object.keys(run.built)) {
+    const s = SPOT[id];
+    if (run.built[id].type === 'fence' && s.road === b.road && Math.abs(s.d - b.d) < TUNE.fenceReach) pace *= TUNE.fenceSlow;
+  }
+  const was = b.d;
+  b.d += pace * dt;
+  if (!b.chosen && b.d >= ENTRY) {
+    b.chosen = true;
+    b.road = pick(oddsOf(run), run.rng);
+    n.walked[b.road] += 1;
+  }
+  if (!b.chosen) return;
+  for (const id of Object.keys(run.built)) {
+    const s = SPOT[id], def = run.built[id];
+    if (def.type !== 'pit' || s.road !== b.road || def.left <= 0 || b.bull) continue;
+    if (was < s.d && b.d >= s.d) {
+      def.left -= 1;
+      slay(run, b, 'pit');
+      return;
     }
   }
-  if (band.beasts <= 0) band.gone = true;
+  if (b.d >= ROADS[b.road].len) {
+    const harm = b.bull ? TUNE.bull.harm : 1;
+    b.dead = true;
+    run.town = Math.max(run.town - harm, 0);
+    n.breached += 1;
+    n.events.push({ kind: 'breach', harm, bull: b.bull });
+    if (run.town <= 0) { run.over = 'lost'; n.done = true; }
+  }
+}
+
+function fireTowers(run, dt) {
+  const n = run.night;
+  for (const id of Object.keys(run.built)) {
+    const def = run.built[id], spot = SPOT[id], d = DEFENCES[def.type];
+    if (def.type !== 'tower') continue;
+    def.wait -= dt;
+    if (def.wait > 0) continue;
+    let target = null, best = -1, at = null;
+    for (const b of n.beasts) {
+      if (b.dead || b.d <= best || b.health <= b.incoming) continue;
+      const p = placeOf(b);
+      if (dist(spot, p) <= d.range) { target = b; best = b.d; at = p; }
+    }
+    if (!target) continue;
+    def.wait = d.reload;
+    target.incoming += d.damage;
+    def.aim = Math.atan2(at.y - spot.y, at.x - spot.x);
+    def.fired = n.time;
+    const x = spot.x + Math.cos(def.aim) * 13, y = spot.y + Math.sin(def.aim) * 13;
+    n.shots.push({ x, y, target, damage: d.damage, a: def.aim, gone: false });
+    n.events.push({ kind: 'fire', x, y, a: def.aim });
+  }
+}
+
+function moveShots(run, dt) {
+  const n = run.night;
+  for (const s of n.shots) {
+    if (s.target.dead) { s.gone = true; continue; }
+    const p = placeOf(s.target);
+    const far = Math.hypot(p.x - s.x, p.y - s.y);
+    const step = TUNE.shotSpeed * dt;
+    s.a = Math.atan2(p.y - s.y, p.x - s.x);
+    if (far > step) { s.x += Math.cos(s.a) * step; s.y += Math.sin(s.a) * step; continue; }
+    s.gone = true;
+    s.target.health -= s.damage;
+    s.target.incoming -= s.damage;
+    s.target.hitAt = n.time;
+    n.events.push({ kind: 'hit', x: p.x, y: p.y });
+    if (s.target.health <= 0) slay(run, s.target, 'kill');
+  }
+  n.shots = n.shots.filter((s) => !s.gone);
 }
 
 function stepNight(run, dt) {
   const n = run.night;
   n.time += dt;
-  for (const band of n.bands) {
-    if (band.gone || n.time < band.starts) continue;
-    if (!band.entered) { band.entered = true; enter(run, band, ROUTES[band.route].segs[0]); }
-    band.metres += TUNE.metresPerSecond * dt;
-    while (!band.gone) {
-      const segs = ROUTES[band.route].segs;
-      const length = SEGMENTS[segs[band.at]].len;
-      if (band.metres < length) break;
-      band.metres -= length;
-      band.at += 1;
-      if (band.at >= segs.length) {
-        run.town -= band.beasts;
-        n.breached += band.beasts;
-        n.marks.push({ seg: 'town_approach', time: n.time, kind: 'breach', beasts: band.beasts });
-        band.gone = true;
-        break;
-      }
-      turnAside(run, band);
-      enter(run, band, ROUTES[band.route].segs[band.at]);
-    }
+  while (n.queue.length && n.queue[0].at <= n.time) {
+    const q = n.queue.shift();
+    n.beasts.push({ id: n.nextId++, road: 0, chosen: false, d: 0, off: (run.rng() - 0.5) * 8, health: q.health, full: q.health, bull: q.bull, hitAt: -9, dead: false, incoming: 0 });
   }
-  if (n.bands.every((b) => b.gone)) endNight(run);
-}
-
-function endNight(run) {
-  const n = run.night;
-  n.income = n.killed * TUNE.killReward;
-  run.money += n.income;
-  run.kills += n.killed;
-  run.breached += n.breached;
-  run.town = Math.max(run.town, 0);
-  n.done = true;
-  if (run.town <= 0) run.over = 'lost';
-  else if (run.season >= TUNE.herds.length) run.over = 'won';
+  for (const b of n.beasts) {
+    if (!b.dead) moveBeast(run, b, dt);
+    if (run.over) return;
+  }
+  fireTowers(run, dt);
+  moveShots(run, dt);
+  n.beasts = n.beasts.filter((b) => !b.dead);
+  if (!n.queue.length && !n.beasts.length) {
+    n.done = true;
+    if (run.season >= TUNE.herds.length) run.over = 'won';
+  }
 }
 
 function nextSeason(run) {
+  run.tracks = run.night.walked;
   run.season += 1;
-  run.money += TUNE.levy;
+  run.money += TUNE.seasonPay;
   run.night = null;
+  for (const def of Object.values(run.built)) if (def.type === 'pit') def.left = DEFENCES.pit.holds;
 }
-
-function score(run) { return run.town * 10 + run.money; }
 // RULES-END
 </script>
 
 <script>
-const PATHS = {
-  neck_pass: [[300, 30], [300, 92]],
-  cairn_west: [[300, 92], [210, 128], [128, 205]],
-  cairn_south: [[128, 205], [118, 286], [190, 350], [300, 372]],
-  saddle: [[128, 205], [205, 234], [282, 228]],
-  ridge_climb: [[300, 92], [318, 160], [282, 228]],
-  ridge_drop: [[282, 228], [312, 300], [300, 372]],
-  spur: [[282, 228], [365, 268], [452, 300]],
-  ford_bank: [[300, 92], [392, 132], [468, 214]],
-  ford_crossing: [[468, 214], [452, 300]],
-  ford_flats: [[452, 300], [378, 352], [300, 372]],
-  town_approach: [[300, 372], [300, 418]],
+// The view: real 3D in plain WebGL2, no libraries. Sheet x is world x, sheet y is
+// world z, and height is world y, so the rules above never know they are in 3D.
+const SHEET = { w: 664, h: 400 };
+const HINTS = {
+  tower: 'Tower: shoots what walks in range. Beasts shy away from it a little.',
+  pit: 'Pit: hidden on the road. Swallows two beasts a season.',
+  fence: 'Fence: turns most beasts off a road and slows the rest.',
 };
-const LABELS = { cairn: [106, 240, 'right'], saddle: [172, 198, 'left'], ridge: [304, 165, 'right'], spur: [340, 300, 'left'], ford: [482, 180, 'left'] };
-const COLOURS = ['#6fb3d4', '#d894b8', '#a998dc', '#d9c36a', '#7fc28f'];
-const SHEET = [600, 440];
-const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d');
 const $ = (id) => document.getElementById(id);
+const overlay = $('map');
+const ctx = overlay.getContext('2d');
+const glCanvas = $('gl');
+const gl = glCanvas.getContext('webgl2', { antialias: true });
 
-let run, tool = "", hover = "", paused = false, speed = 1, hint = "", log = [], last = 0;
+let run, tool, hover, paused, speed = 1, last = 0, spare = 0;
+let sparks, floats, stains, bodies, rings, flashes, banner, shake, redFlash, soundOn = true, audio = null, shownMoney = 0, justHurt = 0;
 
+const HOUSES = [[612, 150, 0.3], [640, 172, -0.2], [610, 240, 0.1], [642, 232, 0.5], [628, 200, 1.5], [664, 202, 0], [660, 150, 0.7], [664, 256, -0.4]];
+const AMBER = [1, 0.66, 0.25], PALE = [1, 0.92, 0.72], RED = [0.95, 0.35, 0.3], DUST = [0.62, 0.54, 0.4];
+const GX = [-170, 850], GZ = [-230, 830];
+
+// --- Small matrix kit (column-major, as WebGL expects) ---
+function mul(a, b) {
+  const o = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+    o[c * 4 + r] = a[r] * b[c * 4] + a[r + 4] * b[c * 4 + 1] + a[r + 8] * b[c * 4 + 2] + a[r + 12] * b[c * 4 + 3];
+  }
+  return o;
+}
+function chain(...ms) { return ms.reduce(mul); }
+const T = (x, y, z) => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]);
+const S = (x, y = x, z = x) => new Float32Array([x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1]);
+function Ry(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]); }
+function Rz(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+function Rx(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]); }
+function perspective(fovy, aspect, near, far) {
+  const f = 1 / Math.tan(fovy / 2);
+  return new Float32Array([f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) / (near - far), -1, 0, 0, 2 * far * near / (near - far), 0]);
+}
+function norm(v) { const l = Math.hypot(...v) || 1; return v.map((x) => x / l); }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function lookAt(eye, at) {
+  const z = norm([eye[0] - at[0], eye[1] - at[1], eye[2] - at[2]]), x = norm(cross([0, 1, 0], z)), y = cross(z, x);
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  return new Float32Array([x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot(x, eye), -dot(y, eye), -dot(z, eye), 1]);
+}
+
+// --- Terrain height: flat where things happen, hills between, cliffs around the map ---
+function smooth(a, b, x) { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); }
+function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
+function noise(x, z) {
+  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
+  const u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
+  const a = hash(ix, iz), b = hash(ix + 1, iz), c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function clearance(x, z) {
+  let best = 1e9;
+  for (const road of ROADS) for (const p of road.pts) best = Math.min(best, (p.x - x) ** 2 + (p.y - z) ** 2);
+  for (const s of SPOTS) best = Math.min(best, (s.x - x) ** 2 + (s.y - z) ** 2);
+  for (const [hx, hz] of HOUSES) best = Math.min(best, (hx - x) ** 2 + (hz - z) ** 2);
+  return Math.sqrt(best);
+}
+function heightAt(x, z, clear) {
+  const k = smooth(16, 62, clear === undefined ? clearance(x, z) : clear);
+  const n = noise(x / 42, z / 42) * 0.7 + noise(x / 17, z / 17) * 0.3;
+  const edge = Math.max(0, 14 - z) * 0.9 + Math.max(0, 40 - x) * 1.0 + Math.max(0, x - 710) * 0.8 + Math.max(0, z - 430) * 0.12;
+  return k * (n * 13 + edge * (0.55 + n));
+}
+
+// --- Shaders ---
+function shader(type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+function program(vs, fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, shader(gl.VERTEX_SHADER, vs)); gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs));
+  gl.bindAttribLocation(p, 0, 'aPos'); gl.bindAttribLocation(p, 1, 'aNor'); gl.bindAttribLocation(p, 2, 'aCol');
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+const MAX_LIGHTS = 16;
+const mainProgram = gl && program(`#version 300 es
+in vec3 aPos; in vec3 aNor; in vec3 aCol;
+uniform mat4 uVP, uM;
+out vec3 vW, vN, vC;
+void main() { vec4 w = uM * vec4(aPos, 1.0); vW = w.xyz; vN = mat3(uM) * aNor; vC = aCol; gl_Position = uVP * w; }`, `#version 300 es
+precision highp float;
+in vec3 vW, vN, vC;
+uniform vec4 uLP[${MAX_LIGHTS}]; uniform vec3 uLC[${MAX_LIGHTS}]; uniform int uLN;
+uniform vec4 uTint; uniform float uGlow; uniform int uUseTex; uniform sampler2D uTex; uniform vec3 uEye; uniform vec4 uBox;
+out vec4 frag;
+void main() {
+  vec3 col = uUseTex == 1 ? texture(uTex, (vW.xz - uBox.xy) / uBox.zw).rgb : vC;
+  vec3 n = normalize(vN);
+  vec3 light = vec3(0.36, 0.40, 0.50) + vec3(0.44, 0.52, 0.70) * max(dot(n, normalize(vec3(-0.45, 0.8, 0.4))), 0.0);
+  for (int i = 0; i < uLN; i++) {
+    vec3 L = uLP[i].xyz - vW;
+    float a = 1.0 / (1.0 + dot(L, L) / (uLP[i].w * uLP[i].w));
+    light += uLC[i] * a * a * (0.35 + 0.65 * max(dot(n, normalize(L)), 0.0)) * 2.2;
+  }
+  vec3 rgb = mix(col * light, col, uGlow) * uTint.rgb;
+  float f = smoothstep(900.0, 2100.0, distance(vW, uEye));
+  frag = vec4(mix(rgb, vec3(0.075, 0.105, 0.14), f), uTint.a);
+}`);
+const sparkProgram = gl && program(`#version 300 es
+in vec3 aPos; in vec3 aNor; in vec3 aCol;
+uniform mat4 uVP; uniform float uScale;
+out vec4 vC;
+void main() { gl_Position = uVP * vec4(aPos, 1.0); gl_PointSize = aNor.x * uScale / gl_Position.w; vC = vec4(aCol, aNor.y); }`, `#version 300 es
+precision mediump float;
+in vec4 vC; out vec4 frag;
+void main() { float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; frag = vec4(vC.rgb, vC.a * (1.0 - d * 1.6)); }`);
+const U = {};
+if (gl) for (const name of ['uVP', 'uM', 'uLP', 'uLC', 'uLN', 'uTint', 'uGlow', 'uUseTex', 'uTex', 'uEye', 'uBox']) U[name] = gl.getUniformLocation(mainProgram, name);
+const SU = gl ? { uVP: gl.getUniformLocation(sparkProgram, 'uVP'), uScale: gl.getUniformLocation(sparkProgram, 'uScale') } : {};
+
+// --- Mesh building: low-poly shapes merged into one vertex list ---
+function hex(c) { return [parseInt(c.slice(1, 3), 16) / 255, parseInt(c.slice(3, 5), 16) / 255, parseInt(c.slice(5, 7), 16) / 255]; }
+function maker() {
+  const d = [], rng = makeRng(7);
+  const tri = (a, b, c, col, mid) => {
+    let n = norm(cross([b[0] - a[0], b[1] - a[1], b[2] - a[2]], [c[0] - a[0], c[1] - a[1], c[2] - a[2]]));
+    if (n[0] * (a[0] - mid[0]) + n[1] * (a[1] - mid[1]) + n[2] * (a[2] - mid[2]) < 0) n = n.map((x) => -x);
+    const v = 0.9 + rng() * 0.2, rgb = hex(col).map((x) => x * v);
+    for (const p of [a, b, c]) d.push(p[0], p[1], p[2], n[0], n[1], n[2], rgb[0], rgb[1], rgb[2]);
+  };
+  const quad = (a, b, c, e, col, mid) => { tri(a, b, c, col, mid); tri(a, c, e, col, mid); };
+  return {
+    d, tri, quad,
+    box(x, y, z, w, h, l, col, turn = 0) { // y is the bottom face
+      const c = Math.cos(turn), s = Math.sin(turn);
+      const p = (a, b, e) => [x + a * c + e * s, y + b, z - a * s + e * c];
+      const hw = w / 2, hl = l / 2, mid = [x, y + h / 2, z];
+      const v = [p(-hw, 0, -hl), p(hw, 0, -hl), p(hw, 0, hl), p(-hw, 0, hl), p(-hw, h, -hl), p(hw, h, -hl), p(hw, h, hl), p(-hw, h, hl)];
+      for (const [a, b, e, f] of [[0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) quad(v[a], v[b], v[e], v[f], col, mid);
+    },
+    cyl(x, y, z, r0, r1, h, n, col) {
+      const mid = [x, y + h / 2, z];
+      for (let i = 0; i < n; i++) {
+        const a = i / n * 6.2832, b = (i + 1) / n * 6.2832;
+        const p0 = [x + Math.cos(a) * r0, y, z + Math.sin(a) * r0], p1 = [x + Math.cos(b) * r0, y, z + Math.sin(b) * r0];
+        const p2 = [x + Math.cos(b) * r1, y + h, z + Math.sin(b) * r1], p3 = [x + Math.cos(a) * r1, y + h, z + Math.sin(a) * r1];
+        quad(p0, p1, p2, p3, col, mid);
+        if (r1 > 0) tri([x, y + h, z], p3, p2, col, [x, y, z]);
+      }
+    },
+    ball(x, y, z, rx, ry, rz, col, rows = 4, segs = 7) {
+      const at = (r, s) => {
+        const up = r / rows * Math.PI, around = s / segs * 6.2832;
+        return [x + Math.sin(up) * Math.cos(around) * rx, y + Math.cos(up) * ry, z + Math.sin(up) * Math.sin(around) * rz];
+      };
+      for (let r = 0; r < rows; r++) for (let s = 0; s < segs; s++) quad(at(r, s), at(r, s + 1), at(r + 1, s + 1), at(r + 1, s), col, [x, y, z]);
+    },
+    disc(inner, col, n = 32) { // a flat ring of radius 1, or a filled disc when inner is 0
+      for (let i = 0; i < n; i++) {
+        const a = i / n * 6.2832, b = (i + 1) / n * 6.2832;
+        const up = (p) => { d.push(p[0], 0, p[1], 0, 1, 0, ...hex(col)); };
+        const o0 = [Math.cos(a), Math.sin(a)], o1 = [Math.cos(b), Math.sin(b)], i0 = o0.map((v) => v * inner), i1 = o1.map((v) => v * inner);
+        [o0, o1, i1, o0, i1, i0].forEach(up);
+      }
+    },
+  };
+}
+function upload(m) {
+  const vao = gl.createVertexArray(), buf = gl.createBuffer(), data = new Float32Array(m.d);
+  gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  [0, 1, 2].forEach((i) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 36, i * 12); });
+  return { vao, count: data.length / 9 };
+}
+function shape(build) { const m = maker(); build(m); return upload(m); }
+
+const MESH = {};
+let ground, groundTexture, groundBase, groundCanvas;
+
+function buildGround() {
+  const step = 8, nx = Math.ceil((GX[1] - GX[0]) / step) + 1, nz = Math.ceil((GZ[1] - GZ[0]) / step) + 1;
+  const hs = new Float32Array(nx * nz);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) hs[j * nx + i] = heightAt(GX[0] + i * step, GZ[0] + j * step);
+  const data = new Float32Array(nx * nz * 9), index = new Uint32Array((nx - 1) * (nz - 1) * 6);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const at = (a, b) => hs[Math.min(Math.max(b, 0), nz - 1) * nx + Math.min(Math.max(a, 0), nx - 1)];
+    const n = norm([at(i - 1, j) - at(i + 1, j), step * 2, at(i, j - 1) - at(i, j + 1)]);
+    data.set([GX[0] + i * step, at(i, j), GZ[0] + j * step, n[0], n[1], n[2], 0, 0, 0], (j * nx + i) * 9);
+  }
+  let k = 0;
+  for (let j = 0; j < nz - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const a = j * nx + i, b = a + 1, c = a + nx, e = c + 1;
+    index[k++] = a; index[k++] = c; index[k++] = b; index[k++] = b; index[k++] = c; index[k++] = e;
+  }
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  [0, 1, 2].forEach((i) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 36, i * 12); });
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index, gl.STATIC_DRAW);
+  ground = { vao, count: index.length };
+
+  // The ground's colour is a painted picture, stretched over the hills.
+  groundBase = document.createElement('canvas');
+  groundBase.width = (GX[1] - GX[0]) * 2; groundBase.height = (GZ[1] - GZ[0]) * 2;
+  const p = groundBase.getContext('2d');
+  p.scale(2, 2); p.translate(-GX[0], -GZ[0]);
+  p.fillStyle = '#4a5a48'; p.fillRect(GX[0], GZ[0], 3000, 3000);
+  const r = makeRng(58);
+  for (let i = 0; i < 7000; i++) {
+    p.fillStyle = ['#3f4e40', '#566853', '#4e5e45', '#5e6b56'][Math.floor(r() * 4)];
+    p.globalAlpha = 0.5;
+    p.beginPath(); p.ellipse(GX[0] + r() * 1020, GZ[0] + r() * 1060, 2 + r() * 9, 1 + r() * 5, r() * 3, 0, 7); p.fill();
+  }
+  p.globalAlpha = 1; p.lineCap = 'round'; p.lineJoin = 'round';
+  const trace = (road) => { p.beginPath(); road.pts.forEach((q, i) => (i ? p.lineTo(q.x, q.y) : p.moveTo(q.x, q.y))); };
+  for (const [colour, width] of [['#3a382c', 25], ['#8b7757', 21], ['#9c8763', 14]]) {
+    ROADS.forEach((road) => { trace(road); p.strokeStyle = colour; p.lineWidth = width; p.stroke(); });
+  }
+  groundCanvas = document.createElement('canvas');
+  groundCanvas.width = groundBase.width; groundCanvas.height = groundBase.height;
+  groundTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, groundTexture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
+  if (aniso) gl.texParameterf(gl.TEXTURE_2D, aniso.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+}
+
+// Worn tracks: the more of last season's herd took a road, the brighter it shows.
+function paintTracks() {
+  const p = groundCanvas.getContext('2d');
+  p.setTransform(1, 0, 0, 1, 0, 0); p.drawImage(groundBase, 0, 0);
+  p.scale(2, 2); p.translate(-GX[0], -GZ[0]);
+  const total = run.tracks[0] + run.tracks[1] + run.tracks[2];
+  if (total) {
+    p.lineCap = 'butt';
+    ROADS.forEach((road, r) => {
+      const share = run.tracks[r] / total;
+      if (share < 0.02) return;
+      p.beginPath(); road.pts.forEach((q, i) => (i ? p.lineTo(q.x, q.y) : p.moveTo(q.x, q.y)));
+      p.strokeStyle = `rgba(232,208,150,${0.15 + share * 0.75})`; p.lineWidth = 2 + share * 13;
+      p.setLineDash([4, 5]); p.stroke(); p.setLineDash([]);
+    });
+  }
+  gl.bindTexture(gl.TEXTURE_2D, groundTexture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, groundCanvas);
+  gl.generateMipmap(gl.TEXTURE_2D);
+}
+
+function buildMeshes() {
+  MESH.scenery = shape((m) => {
+    const r = makeRng(21);
+    let placed = 0;
+    for (let i = 0; i < 1600 && placed < 420; i++) {
+      const x = GX[0] + r() * (GX[1] - GX[0]), z = GZ[0] + r() * 620;
+      const c = clearance(x, z);
+      if (c < 24 || z > 440) continue;
+      const y = heightAt(x, z, c) - 0.6, s = 0.7 + r() * 0.9;
+      if (r() < 0.62) {
+        m.cyl(x, y, z, 1.4 * s, 1 * s, 5 * s, 5, '#3c2f25');
+        m.cyl(x, y + 4 * s, z, 7 * s, 0, 11 * s, 6, '#2f4c3f');
+        m.cyl(x, y + 10 * s, z, 5 * s, 0, 10 * s, 6, '#3a5c4c');
+      } else m.ball(x, y + 1.5 * s, z, (3 + r() * 5) * s, (2 + r() * 3) * s, (3 + r() * 4) * s, '#555d60', 2, 5);
+      placed++;
+    }
+  });
+  MESH.town = shape((m) => {
+    HOUSES.forEach(([x, z, turn]) => {
+      m.box(x, 0, z, 18, 11, 15, '#4b4438', turn);
+      const c = Math.cos(turn), s = Math.sin(turn);
+      const p = (a, b, e) => [x + a * c + e * s, b, z - a * s + e * c], mid = [x, 13, z];
+      const [a, b, e, f, g, h] = [p(-11, 11, -9), p(11, 11, -9), p(11, 11, 9), p(-11, 11, 9), p(-11, 19, 0), p(11, 19, 0)];
+      m.quad(a, b, h, g, '#6b3c2c', mid); m.quad(f, e, h, g, '#6b3c2c', mid); m.tri(a, f, g, '#57332a', mid); m.tri(b, e, h, '#57332a', mid);
+    });
+    for (let z = 112; z <= 288; z += 8) {
+      if (Math.abs(z - 200) < 16) continue;
+      m.cyl(GATE.x - 2, 0, z, 3.4, 2.2, 15 + hash(z, 3) * 4, 5, '#5c4a36');
+    }
+    m.cyl(GATE.x - 2, 0, 184, 3.6, 3, 24, 6, '#6a553d'); m.cyl(GATE.x - 2, 0, 216, 3.6, 3, 24, 6, '#6a553d');
+    m.box(GATE.x - 2, 21, 200, 5, 3, 36, '#6a553d');
+  });
+  MESH.window = shape((m) => { m.box(0, 0, 0, 19, 3.4, 3.6, '#ffc766'); m.box(0, 0, 0, 4, 3.4, 15.6, '#ffc766'); });
+  MESH.beast = shape((m) => {
+    m.ball(0, 10, 0, 12, 7, 6.6, '#a07a5c', 4, 8);
+    m.ball(-1, 15, 0, 7.5, 4.5, 5.4, '#7c5b45', 3, 6);
+    m.ball(12.5, 9, 0, 5, 3.8, 3.8, '#b08a6c', 3, 6);
+    m.cyl(16, 7, -2.6, 1, 0.1, 6, 4, '#e6dcc3'); m.cyl(16, 7, 2.6, 1, 0.1, 6, 4, '#e6dcc3');
+  });
+  MESH.leg = shape((m) => m.box(0, -8, 0, 2.8, 8, 2.8, '#6a5040'));
+  MESH.tower = shape((m) => {
+    m.cyl(0, 0, 0, 11, 9, 5, 8, '#5b6266');
+    m.cyl(0, 5, 0, 7, 4.6, 19, 6, '#5e4a38');
+    m.cyl(0, 24, 0, 9, 9, 2.4, 8, '#6f5a43');
+    m.box(-7.5, 26, 0, 1.4, 12, 1.4, '#4b3b2c');
+  });
+  MESH.lamp = shape((m) => m.ball(0, 0, 0, 2.6, 2.6, 2.6, '#ffc766', 3, 6));
+  MESH.bow = shape((m) => {
+    m.box(4, -1, 0, 22, 2.4, 3, '#b9bfba');
+    m.box(10, -0.8, 0, 3, 2, 18, '#7a644a');
+    m.box(-4, -5, 0, 4, 5, 4, '#4b3b2c');
+  });
+  MESH.pit = shape((m) => {
+    for (let i = 0; i < 10; i++) {
+      const a = i / 10 * 6.2832;
+      m.cyl(Math.cos(a) * 13, 0, Math.sin(a) * 9.5, 0.9, 0.1, 5.5, 4, '#a58d5f');
+    }
+  });
+  MESH.peg = shape((m) => m.ball(0, 0, 0, 1.8, 1.8, 1.8, '#ffe0a0', 2, 5));
+  MESH.fence = shape((m) => {
+    for (const z of [-15, -5, 5, 15]) m.cyl(0, 0, z, 1.5, 1, 15, 5, '#8d6a42');
+    m.box(0, 5, 0, 1.4, 1.6, 34, '#c2925a'); m.box(0, 10, 0, 1.4, 1.6, 34, '#c2925a');
+  });
+  MESH.disc = shape((m) => m.disc(0, '#ffffff'));
+  MESH.ring = shape((m) => m.disc(0.84, '#ffffff'));
+  MESH.pitHole = shape((m) => m.disc(0, '#000000'));
+  MESH.shot = shape((m) => { m.box(0, -0.8, 0, 17, 1.6, 1.6, '#ffffff'); m.cyl(9, 0, 0, 2, 0, 3, 4, '#ffffff'); });
+}
+
+// --- Camera ---
+let cam = { w: 0, h: 0 }, viewProj = null, eye = [0, 0, 0];
+function placeCamera(w, h) {
+  const dir = norm([0, 0.68, 0.73]), at = [334, 0, 176], aspect = w / h;
+  const proj = perspective(32 * Math.PI / 180, aspect, 20, 3000);
+  const corners = [[2, 0, 388], [668, 0, 388], [2, 0, 0], [680, 0, 0]];
+  let d = 800;
+  for (let i = 0; i < 6; i++) {
+    const vp = mul(proj, lookAt([at[0] + dir[0] * d, dir[1] * d, at[2] + dir[2] * d], at));
+    let most = 0;
+    for (const [x, y, z] of corners) {
+      const cw = vp[3] * x + vp[7] * y + vp[11] * z + vp[15];
+      most = Math.max(most, Math.abs((vp[0] * x + vp[4] * y + vp[8] * z + vp[12]) / cw), Math.abs((vp[1] * x + vp[5] * y + vp[9] * z + vp[13]) / cw));
+    }
+    d *= most / 0.99;
+  }
+  cam = { w, h, proj, at, dir, d };
+}
+function setView(jx, jz) {
+  const { at, dir, d, proj } = cam;
+  eye = [at[0] + dir[0] * d + jx, dir[1] * d, at[2] + dir[2] * d + jz];
+  viewProj = mul(proj, lookAt(eye, [at[0] + jx, 0, at[2] + jz]));
+}
+// Where a point in the world lands on screen, in CSS pixels.
+function project(x, y, z) {
+  const m = viewProj, w = m[3] * x + m[7] * y + m[11] * z + m[15];
+  return { x: ((m[0] * x + m[4] * y + m[8] * z + m[12]) / w + 1) / 2 * cam.w, y: (1 - (m[1] * x + m[5] * y + m[9] * z + m[13]) / w) / 2 * cam.h };
+}
+
+function draw3(mesh, model, tint, glow) {
+  gl.uniformMatrix4fv(U.uM, false, model);
+  gl.uniform4fv(U.uTint, tint || [1, 1, 1, 1]);
+  gl.uniform1f(U.uGlow, glow || 0);
+  gl.bindVertexArray(mesh.vao);
+  gl.drawArrays(gl.TRIANGLES, 0, mesh.count);
+}
+function flat(mesh, x, z, y, r, tint, rz) { // something lying on the ground
+  gl.depthMask(false);
+  draw3(mesh, chain(T(x, y, z), S(r, 1, rz || r)), tint, 1);
+  gl.depthMask(true);
+}
+
+// --- Game flow ---
 function start() {
   run = newRun(Math.floor(Math.random() * 1e9));
-  tool = ''; hint = ''; log = ['A run begins. Hold the town for five seasons.'];
-  paused = false;
-  buildTools();
+  tool = 'tower'; hover = null; paused = false;
+  sparks = []; floats = []; stains = []; bodies = []; rings = []; flashes = []; shake = 0; redFlash = 0;
+  shownMoney = run.money;
+  say('A herd is coming', 'Beasts avoid danger. Build, then release them.');
+  $('end').hidden = true;
+  paintTracks();
   refresh();
 }
 
-function view() {
-  const box = canvas.getBoundingClientRect();
-  const k = Math.min(box.width / SHEET[0], box.height / SHEET[1]);
-  return { k, x: (box.width - SHEET[0] * k) / 2, y: (box.height - SHEET[1] * k) / 2, w: box.width, h: box.height };
+function say(title, sub) { banner = { title, sub, age: 0, life: 2.6 }; }
+
+// Sound is a few short synth notes. It starts after the first click, as browsers require.
+function beep(freq, length, kind, volume, drop) {
+  if (!soundOn || !audio) return;
+  try {
+    const now = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+    o.type = kind; o.frequency.setValueAtTime(freq, now);
+    if (drop) o.frequency.exponentialRampToValueAtTime(drop, now + length);
+    g.gain.setValueAtTime(volume, now); g.gain.exponentialRampToValueAtTime(0.0008, now + length);
+    o.connect(g).connect(audio.destination); o.start(now); o.stop(now + length);
+  } catch { soundOn = false; }
 }
+window.addEventListener('pointerdown', () => {
+  if (audio) return;
+  try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch { soundOn = false; }
+});
 
-function pointAlong(points, share) {
-  let total = 0;
-  for (let i = 1; i < points.length; i++) total += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
-  let left = total * Math.min(Math.max(share, 0), 1);
-  for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1], b = points[i];
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (left <= len || i === points.length - 1) {
-      const t = len ? Math.min(left / len, 1) : 0;
-      return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
-    }
-    left -= len;
-  }
-  return points[0];
-}
-
-function spot(seg) {
-  const share = seg === 'spur' ? 0.3 : seg === 'ridge_drop' ? 0.28 : 0.16;
-  return pointAlong(PATHS[seg], share);
-}
-
-function routesThrough(seg) { return ROUTES.map((r, i) => (r.segs.includes(seg) ? i : -1)).filter((i) => i >= 0); }
-
-function segmentAt(px, py) {
-  const v = view();
-  const x = (px - v.x) / v.k, y = (py - v.y) / v.k;
-  let best = '', bestD = 13;
-  for (const seg of Object.keys(PATHS)) {
-    const pts = PATHS[seg];
-    for (let i = 1; i < pts.length; i++) {
-      const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
-      const l2 = (bx - ax) ** 2 + (by - ay) ** 2;
-      const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / l2));
-      const d = Math.hypot(x - ax - t * (bx - ax), y - ay - t * (by - ay));
-      if (d < bestD) { bestD = d; best = seg; }
-    }
+function spotAt(e) {
+  const box = overlay.getBoundingClientRect(), mx = e.clientX - box.left, my = e.clientY - box.top;
+  let best = null, bestD = Math.max(20, cam.h / 26);
+  for (const s of SPOTS) {
+    if (!run.built[s.id] && (!tool || DEFENCES[tool].spot !== s.kind)) continue;
+    const p = project(s.x, 0, s.y), d = Math.hypot(p.x - mx, p.y - my);
+    if (d < bestD) { bestD = d; best = s; }
   }
   return best;
 }
 
-function drawPath(v, seg, colour, width, dash) {
-  ctx.beginPath();
-  PATHS[seg].forEach(([x, y], i) => { const X = v.x + x * v.k, Y = v.y + y * v.k; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
-  ctx.strokeStyle = colour; ctx.lineWidth = width * v.k; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.setLineDash(dash ? [dash * v.k, dash * v.k] : []);
-  ctx.stroke(); ctx.setLineDash([]);
-}
-
-function text(v, x, y, str, colour, size, align) {
-  ctx.fillStyle = colour; ctx.font = `${Math.max(size * v.k, 10)}px system-ui, sans-serif`;
-  ctx.textAlign = align || 'left';
-  ctx.fillText(str, v.x + x * v.k, v.y + y * v.k);
-  ctx.textAlign = 'left';
-}
-
-function bandSpot(band) {
-  const segs = ROUTES[band.route].segs;
-  const seg = segs[Math.min(band.at, segs.length - 1)];
-  return pointAlong(PATHS[seg], band.metres / SEGMENTS[seg].len);
-}
-
-function draw() {
-  const dpr = window.devicePixelRatio || 1;
-  const box = canvas.getBoundingClientRect();
-  if (canvas.width !== Math.round(box.width * dpr) || canvas.height !== Math.round(box.height * dpr)) {
-    canvas.width = Math.round(box.width * dpr); canvas.height = Math.round(box.height * dpr);
+function addSparks(x, y, z, n, colour, force, life) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.28, f = force * (0.3 + Math.random());
+    sparks.push({ x, y, z, vx: Math.cos(a) * f, vy: force * (0.3 + Math.random()), vz: Math.sin(a) * f, age: 0, life: life * (0.6 + Math.random() * 0.6), colour, size: 2.5 + Math.random() * 3 });
   }
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, box.width, box.height);
-  const v = view();
-  const night = run.night && !run.night.done ? run.night : null;
+  if (sparks.length > 700) sparks.splice(0, sparks.length - 700);
+}
 
-  ctx.strokeStyle = '#6fb3d459'; ctx.lineWidth = 3 * v.k; ctx.setLineDash([3 * v.k, 6 * v.k]); ctx.beginPath();
-  [[372, 214], [415, 244], [460, 257], [520, 285], [596, 300]].forEach(([x, y], i) => { const X = v.x + x * v.k, Y = v.y + y * v.k; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
-  ctx.stroke(); ctx.setLineDash([]);
+function addFloat(x, z, h, text, colour, size) { floats.push({ x, z, h, text, colour, size: size || 15, age: 0, life: 1.1 }); }
+function addFlash(x, y, z, colour, r, life) { flashes.push({ x, y, z, colour, r, age: 0, life }); }
+function nudge(id, name) { const el = $(id); el.classList.add(name); setTimeout(() => el.classList.remove(name), 130); }
 
-  const usable = (seg) => (night ? fireable(seg) && night.firesLeft > 0 : !SEGMENTS[seg].closed);
-  if (hover && usable(hover)) drawPath(v, hover, night ? '#ff8a3c' : '#f0a23c', 13);
-
-  for (const seg of Object.keys(PATHS)) {
-    const through = routesThrough(seg);
-    if (through.length === ROUTES.length) drawPath(v, seg, '#9aa5a3', 7);
-    else {
-      drawPath(v, seg, COLOURS[through[0]], 6);
-      if (through.length === 2) drawPath(v, seg, COLOURS[through[1]], 6, 16);
+// Rules only record what happened; this turns each record into something to see and hear.
+function play(e) {
+  if (e.kind === 'fire') {
+    addSparks(e.x, 30, e.y, 4, PALE, 34, 0.18);
+    addFlash(e.x, 32, e.y, AMBER, 40, 0.12);
+    beep(520, 0.07, 'square', 0.015, 170);
+  } else if (e.kind === 'hit') {
+    addSparks(e.x, 11, e.y, 7, PALE, 50, 0.3);
+    beep(180, 0.05, 'triangle', 0.03);
+  } else if (e.kind === 'kill' || e.kind === 'pit') {
+    const big = e.bull ? 2.4 : 1.3;
+    if (e.kind === 'kill') {
+      addSparks(e.x, 11 * big, e.y, 18 * big, AMBER, 60, 0.6);
+      rings.push({ x: e.x, z: e.y, age: 0, life: 0.45, r: 26 * big, colour: AMBER });
+      stains.push({ x: e.x, z: e.y, r: (7 + Math.random() * 5) * big });
+      if (stains.length > 90) stains.shift();
+    } else {
+      addSparks(e.x, 3, e.y, 16, DUST, 42, 0.55);
+      rings.push({ x: e.x, z: e.y, age: 0, life: 0.5, r: 26, colour: DUST });
+      beep(240, 0.25, 'sawtooth', 0.03, 60);
     }
+    bodies.push({ x: e.x, z: e.y, a: e.a, age: 0, life: e.kind === 'pit' ? 0.7 : 1.5, how: e.kind, big, bull: e.bull });
+    addFloat(e.x, e.y, 20 * big, `+${e.reward}`, '#ffc766', e.bull ? 26 : 17);
+    beep(660, 0.1, 'triangle', 0.035, 880);
+  } else if (e.kind === 'breach') {
+    const big = e.bull ? 2.2 : 1;
+    shake = Math.max(shake, 7 * big);
+    redFlash = Math.min(0.5, 0.3 * big);
+    justHurt = 0.3;
+    addSparks(GATE.x, 14, GATE.y, 26 * big, RED, 80, 0.7);
+    addFlash(GATE.x, 24, GATE.y, RED, 110, 0.35);
+    rings.push({ x: GATE.x, z: GATE.y, age: 0, life: 0.5, r: 60, colour: RED });
+    addFloat(GATE.x - 8, GATE.y, 34, `-${e.harm}`, '#ff8d7a', e.bull ? 34 : 26);
+    beep(110, 0.35, 'sawtooth', 0.09, 42);
+    nudge('townBox', 'hit');
   }
+}
 
-  const odds = oddsOf(ROUTES, run.defences);
-  ROUTES.forEach((r, i) => {
-    const [x, y, align] = LABELS[r.id];
-    text(v, x, y, `${r.name}  ${Math.round(odds[i] * 100)}%`, '#e4e6e1', 13, align);
+function afterNight() {
+  const n = run.night;
+  if (run.over) { finish(); return; }
+  const clean = n.breached === 0;
+  nextSeason(run);
+  paintTracks();
+  stains = [];
+  addFloat(GATE.x - 8, GATE.y + 34, 26, `+${TUNE.seasonPay}`, '#ffc766', 24);
+  beep(392, 0.16, 'triangle', 0.05); setTimeout(() => beep(523, 0.22, 'triangle', 0.05), 130);
+  if (finalSeason(run)) say('The last herd', 'The Old Bull walks with them. Pits will not hold it.');
+  else if (run.season === 2) say('Dawn', 'Bright tracks show where the herd walked.');
+  else say(clean ? 'Dawn: not one got through' : 'Dawn', 'Build for the next herd.');
+  refresh();
+}
+
+function finish() {
+  $('end').hidden = false;
+  if (run.over === 'won') {
+    $('endTitle').textContent = 'The town holds';
+    $('endBody').textContent = `Five herds beaten with ${run.town} of ${TUNE.town} town left.`;
+    beep(523, 0.5, 'triangle', 0.06);
+  } else {
+    $('endTitle').textContent = 'The town falls';
+    $('endBody').textContent = `Overrun in season ${run.season} of ${TUNE.herds.length}.`;
+    beep(90, 0.9, 'sawtooth', 0.09, 30);
+  }
+  refresh();
+}
+
+function release() {
+  if (run.night) { paused = !paused; refresh(); return; }
+  startNight(run);
+  paused = false;
+  say(`Season ${run.season}`, `A herd of ${herdSize(run)}${finalSeason(run) ? ' and the Old Bull' : ''}`);
+  beep(150, 0.7, 'sawtooth', 0.05, 110);
+  refresh();
+}
+
+function refresh() {
+  const night = run.night;
+  $('season').textContent = `Season ${run.season} of ${TUNE.herds.length}`;
+  $('townText').textContent = run.town;
+  $('townBar').style.width = `${run.town / TUNE.town * 100}%`;
+  $('townBar').style.background = run.town / TUNE.town > 0.3 ? 'var(--good)' : 'var(--danger)';
+  $('moneyBox').textContent = `$${run.money}`;
+  $('go').textContent = run.over ? 'Run over' : night ? (paused ? 'Resume' : 'Pause') : 'Release the herd';
+  $('go').disabled = !!run.over;
+  $('speed').textContent = `${speed}×`;
+  $('sound').textContent = soundOn ? 'Sound on' : 'Sound off';
+  document.querySelectorAll('#tools button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.tool === tool);
+    b.classList.toggle('poor', run.money < DEFENCES[b.dataset.tool].cost);
   });
-
-  text(v, 314, 34, 'THE NECK', '#9aa5a3', 11);
-  const gx = v.x + 300 * v.k, gy = v.y + 418 * v.k;
-  const health = run.town / TUNE.town;
-  ctx.fillStyle = '#f0a23c33'; ctx.beginPath(); ctx.arc(gx, gy, 20 * v.k, 0, 7); ctx.fill();
-  ctx.fillStyle = health > 0.3 ? '#f0a23c' : '#e0715f'; ctx.beginPath(); ctx.arc(gx, gy, 7 * v.k, 0, 7); ctx.fill();
-  text(v, 314, 424, 'TOWN', '#f0a23c', 13);
-
-  if (!run.night) {
-    for (const seg of Object.keys(PATHS)) {
-      if (SEGMENTS[seg].closed || run.defences[seg]) continue;
-      const [x, y] = spot(seg);
-      ctx.fillStyle = '#121a1f'; ctx.strokeStyle = '#f0a23c'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(v.x + x * v.k, v.y + y * v.k, 5 * v.k, 0, 7); ctx.fill(); ctx.stroke();
-    }
-  }
-
-  for (const seg of Object.keys(run.defences)) {
-    const [x, y] = spot(seg);
-    const X = v.x + x * v.k, Y = v.y + y * v.k, k = v.k;
-    ctx.fillStyle = run.placed.includes(seg) ? '#f0a23c' : '#e0715f';
-    const type = run.defences[seg];
-    if (type === 'fence') ctx.fillRect(X - 11 * k, Y - 3 * k, 22 * k, 6 * k);
-    else {
-      ctx.beginPath();
-      const pts = type === 'pit' ? [[0, -9], [9, 0], [0, 9], [-9, 0]] : [[0, -10], [9, 7], [-9, 7]];
-      pts.forEach(([a, b], i) => (i ? ctx.lineTo(X + a * k, Y + b * k) : ctx.moveTo(X + a * k, Y + b * k)));
-      ctx.fill();
-    }
-    if (night && night.capacity[seg] !== undefined && DEFENCES[type].cap) {
-      text(v, x + 12, y + 4, `${night.capacity[seg]}`, night.capacity[seg] ? '#e4e6e1' : '#e0715f', 11);
-    }
-  }
-
-  if (run.night) {
-    const n = run.night;
-    for (const seg of Object.keys(n.fires)) {
-      if (!(n.fires[seg] > n.time)) continue;
-      const [x, y] = pointAlong(PATHS[seg], 0.07);
-      const flicker = 9 + Math.sin(performance.now() / 70) * 2;
-      ctx.fillStyle = '#ff8a3c'; ctx.beginPath(); ctx.arc(v.x + x * v.k, v.y + y * v.k, flicker * v.k, 0, 7); ctx.fill();
-      ctx.fillStyle = '#ffd38a'; ctx.beginPath(); ctx.arc(v.x + x * v.k, v.y + y * v.k, flicker * 0.5 * v.k, 0, 7); ctx.fill();
-    }
-    for (const band of n.bands) {
-      if (band.gone || n.time < band.starts) continue;
-      const [x, y] = bandSpot(band);
-      for (let i = 0; i < band.beasts; i++) {
-        const a = (i * 2.4), r = 3 + (i % 3) * 3;
-        ctx.fillStyle = COLOURS[band.route]; ctx.strokeStyle = '#121a1f'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.ellipse(v.x + (x + Math.cos(a) * r) * v.k, v.y + (y + Math.sin(a) * r) * v.k, 5 * v.k, 3.4 * v.k, a, 0, 7); ctx.fill(); ctx.stroke();
-      }
-    }
-    for (const m of n.marks) {
-      const age = n.time - m.time;
-      if (age > 1.6) continue;
-      const fade = 1 - age / 1.6;
-      ctx.globalAlpha = fade;
-      if (m.kind === 'kill') {
-        const [x, y] = spot(m.seg);
-        ctx.strokeStyle = '#e4e6e1'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(v.x + x * v.k, v.y + y * v.k, (10 + 16 * age) * v.k, 0, 7); ctx.stroke();
-      } else {
-        text(v, 288, 412, `-${m.beasts}`, '#e0715f', 18, 'right');
-      }
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  if (hover) {
-    const share = routesThrough(hover).reduce((sum, i) => sum + odds[i], 0);
-    const [x, y] = pointAlong(PATHS[hover], 0.5);
-    const note = `${Math.round(share * 100)}% of the herd`;
-    ctx.font = `${Math.max(13 * v.k, 10)}px system-ui, sans-serif`;
-    const w = ctx.measureText(note).width;
-    ctx.fillStyle = '#121a1f'; ctx.fillRect(v.x + (x + 10) * v.k - 4, v.y + (y - 8) * v.k - 14 * v.k, w + 8, 18 * v.k);
-    text(v, x + 10, y - 8, note, '#f0a23c', 13);
-  }
+  $('hint').textContent = tool ? HINTS[tool] : 'Pick something to build.';
 }
 
 function buildTools() {
-  const box = $('prepare');
-  box.innerHTML = '<div class="heading">Pick a defence, then click a route</div>';
-  for (const key of Object.keys(DEFENCES)) {
-    const d = DEFENCES[key];
+  Object.keys(DEFENCES).forEach((key, i) => {
     const b = document.createElement('button');
     b.dataset.tool = key;
-    const what = d.kill ? `${d.kill * 100}% kill, ${d.cap} a night` : 'no kills';
-    b.textContent = `${d.name}  ${d.cost} · threat ${d.threat} · ${what}`;
-    b.onclick = () => { tool = tool === key ? '' : key; refresh(); };
-    box.appendChild(b);
-  }
-  const h = document.createElement('div'); h.id = 'hint'; h.className = 'muted'; box.appendChild(h);
-  const go = document.createElement('button'); go.className = 'primary'; go.id = 'release'; go.textContent = 'Release the herd';
-  go.onclick = () => { startNight(run); paused = false; addLog(`Season ${run.season}: ${herdSize(run)} beasts come through The Neck.`); refresh(); };
-  box.appendChild(go);
+    b.innerHTML = `${DEFENCES[key].name}<span class="cost">$${DEFENCES[key].cost}</span>`;
+    b.title = `Key ${i + 1}`;
+    b.onclick = () => choose(key);
+    $('tools').appendChild(b);
+  });
 }
 
-function addLog(line) { log.push(line); log = log.slice(-7); }
+function choose(key) { tool = tool === key ? '' : key; hover = null; refresh(); }
 
-function refresh() {
+// --- Drawing the scene ---
+function setLights() {
+  const pos = [], col = [];
+  const add = (x, y, z, r, c, power) => { if (pos.length < MAX_LIGHTS * 4) { pos.push(x, y, z, r); col.push(c[0] * power, c[1] * power, c[2] * power); } };
+  add(GATE.x + 40, 46, GATE.y, 90, justHurt > 0 ? RED : AMBER, 0.2 + 0.4 * run.town / TUNE.town + (justHurt > 0 ? 0.8 : 0));
+  for (const id of Object.keys(run.built)) if (run.built[id].type === 'tower') add(SPOT[id].x - 6, 44, SPOT[id].y, 56, AMBER, 0.7);
+  for (const f of flashes.slice(-3)) add(f.x, f.y, f.z, f.r, f.colour, 2 * (1 - f.age / f.life));
+  gl.uniform4fv(U.uLP, new Float32Array(pos)); gl.uniform3fv(U.uLC, new Float32Array(col));
+  gl.uniform1i(U.uLN, pos.length / 4);
+}
+
+function drawBeast(b, n, time) {
+  const p = placeOf(b), big = b.bull ? 2.4 : 1.3;
+  const hit = n.time - b.hitAt < 0.1;
+  const bob = Math.abs(Math.sin(time * 5.5 + b.id)) * 0.9;
+  flat(MESH.disc, p.x, p.y, 0.5, 15 * big, [0, 0, 0, 0.35], 9 * big);
+  const body = chain(T(p.x, bob, p.y), Ry(-p.a), S(big));
+  const tint = hit ? [1, 1, 1, 1] : b.bull ? [1.35, 0.72, 0.6, 1] : [1, 1, 1, 1];
+  draw3(MESH.beast, body, tint, hit ? 0.9 : 0.35);
+  [[7, 4.6, 0], [7, -4.6, 3.1], [-7, 4.6, 3.1], [-7, -4.6, 0]].forEach(([lx, lz, phase]) => {
+    draw3(MESH.leg, chain(body, T(lx, 8, lz), Rz(Math.sin(time * 11 + b.id * 1.7 + phase) * 0.55)), tint, hit ? 0.9 : 0);
+  });
+}
+
+function drawBody(k, dt) {
+  k.age += dt;
+  const t = Math.min(k.age / k.life, 1), base = T(k.x, 0, k.z);
+  const tint = k.bull ? [1.35, 0.72, 0.6, 1] : [0.8, 0.8, 0.8, 1];
+  if (k.how === 'pit') {
+    draw3(MESH.beast, chain(base, T(0, -t * 22, 0), Ry(-k.a), Rz(-t * 0.9), S(1 - t * 0.4)), tint);
+  } else {
+    const fall = Math.min(t * 3.5, 1), sink = Math.max(t - 0.6, 0) * 2.5;
+    draw3(MESH.beast, chain(base, T(0, -sink * 16, 0), Ry(-k.a), Rx(fall * 1.45), S(k.big)), tint);
+  }
+}
+
+function drawDefence(s, def, night, alpha) {
+  const tint = [1, 1, 1, alpha];
+  if (def.type === 'tower') {
+    const since = night && night.time >= def.fired ? night.time - def.fired : 9;
+    const back = since < 0.14 ? 3.5 * (1 - since / 0.14) : 0;
+    draw3(MESH.tower, T(s.x, 0, s.y), tint);
+    draw3(MESH.bow, chain(T(s.x, 30, s.y), Ry(-def.aim), T(-back, 0, 0)), tint);
+    draw3(MESH.lamp, T(s.x - 7.5, 39, s.y), since < 0.1 ? [1.5, 1.5, 1.5, alpha] : tint, 1);
+  } else if (def.type === 'pit') {
+    flat(MESH.pitHole, s.x, s.y, 0.7, 13, [1, 1, 1, alpha], 9.5);
+    draw3(MESH.pit, T(s.x, 0, s.y), def.left > 0 ? tint : [0.45, 0.45, 0.45, alpha]);
+    for (let i = 0; i < DEFENCES.pit.holds; i++) {
+      draw3(MESH.peg, T(s.x + (i - 0.5) * 9, 9, s.y - 13), i < def.left ? tint : [0.25, 0.22, 0.2, alpha], 1);
+    }
+  } else {
+    draw3(MESH.fence, chain(T(s.x, 0, s.y), Ry(-s.angle)), tint);
+  }
+}
+
+function rangeDisc(s, c) {
+  gl.disable(gl.DEPTH_TEST);
+  flat(MESH.disc, s.x, s.y, 1, DEFENCES.tower.range, [...c, 0.13]);
+  flat(MESH.ring, s.x, s.y, 1, DEFENCES.tower.range, [...c, 0.5]);
+  gl.enable(gl.DEPTH_TEST);
+}
+
+function drawScene(dt, time) {
   const n = run.night;
-  const preparing = !n;
-  const nightOn = n && !n.done;
-  $('title').textContent = `Season ${run.season} of ${TUNE.herds.length} · ${preparing ? 'prepare' : nightOn ? 'night' : 'dawn'}`;
-  $('townText').textContent = `${Math.max(run.town, 0)} of ${TUNE.town}`;
-  const health = Math.max(run.town, 0) / TUNE.town;
-  $('townBar').style.width = `${health * 100}%`;
-  $('townBar').style.background = health > 0.3 ? 'var(--good)' : 'var(--danger)';
-  $('money').textContent = run.money;
-  $('herd').textContent = `${herdSize(run)} beasts this season`;
-  $('fires').textContent = nightOn ? `${n.firesLeft} left, click a route` : `${TUNE.firesPerNight} a night`;
-  $('prepare').hidden = !preparing;
-  $('nightControls').hidden = !nightOn;
-  $('pause').textContent = paused ? 'Play' : 'Pause';
-  $('speed').textContent = `Speed ${speed}×`;
-  const o = oddsOf(ROUTES, run.defences);
-  $('odds').innerHTML = ROUTES.map((r, i) => `<div class="row"><span>${r.name} ${Math.round(o[i] * 100)}%</span><div class="bar"><i style="width:${o[i] * 100}%;background:${COLOURS[i]}"></i></div></div>`).join('');
-  document.querySelectorAll('#prepare button[data-tool]').forEach((b) => b.classList.toggle('on', b.dataset.tool === tool));
-  const h = $('hint');
-  if (h) h.textContent = hint || `Next season brings ${TUNE.levy} from the town. Rings mark open ground. Click this season's defence to take it back.`;
-  const banner = $('banner');
-  banner.hidden = !(n && n.done);
-  if (n && n.done) {
-    let body = `<div><b>${n.killed}</b> killed, <b>${n.breached}</b> got through. Earned <b>${n.income}</b>.</div>`;
-    if (run.over === 'won') body += `<p><b>The town holds.</b> Score ${score(run)}: town ${run.town} × 10, plus ${run.money} money.</p>`;
-    else if (run.over === 'lost') body += `<p><b>The town falls in season ${run.season}.</b></p>`;
-    else body += `<p></p><button class="primary" id="next">Prepare season ${run.season + 1}: ${TUNE.herds[run.season]} beasts</button>`;
-    banner.innerHTML = body;
-    const next = $('next');
-    if (next) next.onclick = () => { nextSeason(run); hint = ''; refresh(); };
+  gl.clearColor(0.075, 0.105, 0.14, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.useProgram(mainProgram);
+  gl.uniformMatrix4fv(U.uVP, false, viewProj);
+  gl.uniform3fv(U.uEye, eye);
+  gl.uniform4f(U.uBox, GX[0], GZ[0], GX[1] - GX[0], GZ[1] - GZ[0]);
+  gl.uniform1i(U.uTex, 0);
+  setLights();
+
+  gl.uniform1i(U.uUseTex, 1);
+  gl.uniformMatrix4fv(U.uM, false, T(0, 0, 0));
+  gl.uniform4f(U.uTint, 1, 1, 1, 1); gl.uniform1f(U.uGlow, 0);
+  gl.bindVertexArray(ground.vao);
+  gl.drawElements(gl.TRIANGLES, ground.count, gl.UNSIGNED_INT, 0);
+  gl.uniform1i(U.uUseTex, 0);
+
+  draw3(MESH.scenery, T(0, 0, 0));
+  draw3(MESH.town, T(0, 0, 0), justHurt > 0 ? [1.6, 0.6, 0.55, 1] : [1, 1, 1, 1]);
+  const lit = Math.ceil(run.town / TUNE.town * HOUSES.length);
+  HOUSES.forEach(([x, z, turn], i) => {
+    draw3(MESH.window, chain(T(x, 4.5, z), Ry(turn)), i < lit ? [1, 1, 1, 1] : [0.07, 0.08, 0.1, 1], 1);
+  });
+
+  for (const s of stains) flat(MESH.disc, s.x, s.z, 0.55, s.r, [0.42, 0.33, 0.16, 0.75], s.r * 0.7);
+
+  const pulse = 0.55 + Math.sin(time * 4) * 0.3;
+  for (const s of SPOTS) {
+    if (run.built[s.id]) continue;
+    const wanted = tool && DEFENCES[tool].spot === s.kind;
+    if (!wanted && s.kind === 'road') continue;
+    flat(MESH.ring, s.x, s.y, 0.9, s.kind === 'pad' ? 13 : 11, [1, 0.66, 0.25, wanted ? pulse : 0.22]);
   }
-  $('log').innerHTML = log.map((l) => `<div>${l}</div>`).join('');
+
+  for (const id of Object.keys(run.built)) drawDefence(SPOT[id], run.built[id], n, 1);
+  if (n) for (const b of n.beasts) if (!b.dead) drawBeast(b, n, time);
+  for (const k of bodies) drawBody(k, dt);
+  bodies = bodies.filter((k) => k.age < k.life);
+
+  if (n) for (const s of n.shots) {
+    const p = placeOf(s.target), far = Math.hypot(p.x - s.x, p.y - s.y);
+    const h = 11 + 19 * Math.min(far / 70, 1);
+    draw3(MESH.shot, chain(T(s.x, h, s.y), Ry(-s.a), S(2.2, 2.6, 2.6)), [1, 0.95, 0.75, 1], 1);
+    sparks.push({ x: s.x, y: h, z: s.y, vx: 0, vy: 0, vz: 0, age: 0, life: 0.28, colour: AMBER, size: 10 });
+  }
+
+  // Range preview for a tower being placed or looked at.
+  if (hover && !run.built[hover.id] && tool) {
+    const ok = run.money >= DEFENCES[tool].cost;
+    if (tool === 'tower') rangeDisc(hover, ok ? AMBER : RED);
+    drawDefence(hover, { type: tool, left: DEFENCES[tool].holds || 0, aim: -Math.PI / 2, fired: -9 }, null, ok ? 0.75 : 0.35);
+  } else if (hover && run.built[hover.id] && run.built[hover.id].type === 'tower') rangeDisc(hover, AMBER);
+
+  for (const r of rings) {
+    r.age += dt;
+    const t = r.age / r.life;
+    flat(MESH.ring, r.x, r.z, 1.2, 6 + r.r * t, [...r.colour, Math.max(1 - t, 0)]);
+  }
+  rings = rings.filter((r) => r.age < r.life);
+  for (const f of flashes) f.age += dt;
+  flashes = flashes.filter((f) => f.age < f.life);
+
+  // Sparks are glowing points, drawn last and added on top of the scene.
+  for (const p of sparks) {
+    p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.vy -= 170 * dt; p.vx *= 0.97; p.vz *= 0.97;
+    if (p.y < 0.5) { p.y = 0.5; p.vy *= -0.3; }
+  }
+  sparks = sparks.filter((p) => p.age < p.life);
+  if (sparks.length) {
+    const data = new Float32Array(sparks.length * 9);
+    sparks.forEach((p, i) => data.set([p.x, p.y, p.z, p.size, Math.max(1 - p.age / p.life, 0), 0, ...p.colour], i * 9));
+    gl.useProgram(sparkProgram);
+    gl.uniformMatrix4fv(SU.uVP, false, viewProj);
+    gl.uniform1f(SU.uScale, glCanvas.height * 1.4);
+    gl.bindVertexArray(MESH.sparkVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, MESH.sparkBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE); gl.depthMask(false);
+    gl.drawArrays(gl.POINTS, 0, sparks.length);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(true);
+  }
 }
 
-canvas.addEventListener('mousemove', (e) => {
-  const r = canvas.getBoundingClientRect();
-  hover = segmentAt(e.clientX - r.left, e.clientY - r.top);
-  canvas.style.cursor = hover ? 'pointer' : 'default';
+// Everything flat sits on a 2D layer above the 3D scene, placed by projecting world points.
+function drawOverlay(dt) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), { w, h } = cam;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const n = run.night, unit = Math.min(Math.max(Math.min(h / 520, w / 800), 0.8), 1.5);
+
+  const neck = project(NECK.x + 18, 22, NECK.y - 8);
+  ctx.fillStyle = '#c4cdcb'; ctx.font = `600 ${12 * unit}px system-ui, sans-serif`; ctx.textAlign = 'left';
+  ctx.fillText('THE NECK', neck.x, neck.y);
+
+  if (n) for (const b of n.beasts) {
+    if (b.dead || b.health >= b.full) continue;
+    const p = placeOf(b), big = b.bull ? 2.4 : 1.3, at = project(p.x, 25 * big, p.y);
+    const bw = (b.bull ? 56 : 26) * unit, share = Math.max(b.health / b.full, 0);
+    ctx.fillStyle = '#0a0f12'; ctx.fillRect(at.x - bw / 2 - 1, at.y - 1, bw + 2, 6);
+    ctx.fillStyle = share > 0.5 ? '#7fc28f' : share > 0.25 ? '#e8c35a' : '#e0715f';
+    ctx.fillRect(at.x - bw / 2, at.y, bw * share, 4);
+  }
+
+  ctx.textAlign = 'center';
+  for (const f of floats) {
+    f.age += dt;
+    const t = f.age / f.life, at = project(f.x, f.h, f.z);
+    ctx.globalAlpha = t < 0.7 ? 1 : Math.max((1 - t) / 0.3, 0);
+    ctx.font = `700 ${f.size * unit}px system-ui, sans-serif`;
+    const y = at.y - 34 * unit * Math.sqrt(Math.min(t, 1));
+    ctx.lineWidth = 3; ctx.strokeStyle = '#0a0f12'; ctx.strokeText(f.text, at.x, y);
+    ctx.fillStyle = f.colour; ctx.fillText(f.text, at.x, y);
+  }
+  ctx.globalAlpha = 1;
+  floats = floats.filter((f) => f.age < f.life);
+
+  if (redFlash > 0) {
+    redFlash = Math.max(redFlash - dt * 1.1, 0);
+    const edge = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.25, w / 2, h / 2, Math.max(w, h) * 0.65);
+    edge.addColorStop(0, 'rgba(224,60,50,0)'); edge.addColorStop(1, `rgba(224,60,50,${redFlash})`);
+    ctx.fillStyle = edge; ctx.fillRect(0, 0, w, h);
+  }
+
+  if (banner) {
+    banner.age += dt;
+    const t = banner.age / banner.life;
+    if (t >= 1) banner = null;
+    else {
+      const alpha = Math.min(banner.age / 0.25, (1 - t) / 0.25, 1);
+      const y = h * 0.2 + (1 - Math.min(banner.age / 0.25, 1)) * 16;
+      ctx.globalAlpha = alpha * 0.8; ctx.fillStyle = '#0a0f12'; ctx.fillRect(0, y - 46 * unit, w, 82 * unit);
+      ctx.globalAlpha = alpha; ctx.fillStyle = '#f0a23c'; ctx.font = `700 ${32 * unit}px system-ui, sans-serif`; ctx.fillText(banner.title, w / 2, y);
+      ctx.fillStyle = '#e4e6e1'; ctx.font = `${15 * unit}px system-ui, sans-serif`; ctx.fillText(banner.sub, w / 2, y + 24 * unit);
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.textAlign = 'left';
+}
+
+function draw(dt, time) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const box = overlay.getBoundingClientRect();
+  const pw = Math.round(box.width * dpr), ph = Math.round(box.height * dpr);
+  if (overlay.width !== pw || overlay.height !== ph || cam.w !== box.width || cam.h !== box.height) {
+    overlay.width = pw; overlay.height = ph; glCanvas.width = pw; glCanvas.height = ph;
+    gl.viewport(0, 0, pw, ph);
+    placeCamera(box.width, box.height);
+  }
+  shake = Math.max(shake - dt * 22, 0);
+  setView(shake ? (Math.random() - 0.5) * shake : 0, shake ? (Math.random() - 0.5) * shake : 0);
+  justHurt = Math.max(justHurt - dt, 0);
+  drawScene(dt, time);
+  drawOverlay(dt);
+}
+
+overlay.addEventListener('mousemove', (e) => {
+  hover = run.over ? null : spotAt(e);
+  overlay.style.cursor = hover ? 'pointer' : 'default';
 });
-canvas.addEventListener('mouseleave', () => { hover = ''; });
-canvas.addEventListener('click', (e) => {
-  const r = canvas.getBoundingClientRect();
-  const seg = segmentAt(e.clientX - r.left, e.clientY - r.top);
-  if (!seg) return;
-  const n = run.night;
-  if (n && !n.done) {
-    if (lightFire(run, seg)) addLog('A signal fire goes up. Bands turn away from it.');
-    refresh();
+overlay.addEventListener('mouseleave', () => { hover = null; });
+overlay.addEventListener('click', (e) => {
+  if (run.over) return;
+  const s = spotAt(e);
+  if (!s) return;
+  if (run.built[s.id]) {
+    if (takeBack(run, s.id)) { addFloat(s.x, s.y, 20, 'Taken back', '#c4cdcb', 13); beep(300, 0.08, 'triangle', 0.03); refresh(); }
     return;
   }
-  if (n) return;
-  if (takeBack(run, seg)) hint = 'Taken back.';
-  else if (!tool) hint = SEGMENTS[seg].closed ? 'This ground cannot be built on.' : 'Pick a defence first.';
-  else hint = place(run, tool, seg);
+  const why = tool ? place(run, tool, s.id) : 'spot';
+  if (why === 'money') {
+    addFloat(s.x, s.y, 20, 'Not enough money', '#ff8d7a', 14);
+    nudge('moneyBox', 'short'); beep(140, 0.12, 'square', 0.025);
+  } else if (!why) {
+    rings.push({ x: s.x, z: s.y, age: 0, life: 0.35, r: 26, colour: AMBER });
+    addSparks(s.x, 2, s.y, 12, DUST, 42, 0.35);
+    beep(200, 0.09, 'triangle', 0.06, 110);
+  }
   refresh();
 });
-$('pause').onclick = () => { paused = !paused; refresh(); };
-$('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 0.5 : 1; refresh(); };
-$('restart').onclick = start;
-window.addEventListener('keydown', (e) => { if (e.code === 'Space' && run.night && !run.night.done) { e.preventDefault(); paused = !paused; refresh(); } });
+$('go').onclick = release;
+$('speed').onclick = () => { speed = speed === 1 ? 2 : 1; refresh(); };
+$('sound').onclick = () => { soundOn = !soundOn; refresh(); };
+$('again').onclick = start;
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); if (!run.over) release(); }
+  const key = Object.keys(DEFENCES)[Number(e.key) - 1];
+  if (key) choose(key);
+  if (e.key === 'Escape') { tool = ''; hover = null; refresh(); }
+});
 
+const TICK = 1 / 60;
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   const n = run.night;
   if (n && !n.done && !paused) {
-    const before = n.killed + n.breached;
-    stepNight(run, dt * speed);
-    if (n.done) { addLog(`Dawn: ${n.killed} killed, ${n.breached} got through.`); refresh(); }
-    else if (n.killed + n.breached !== before) refresh();
+    spare += dt * speed;
+    while (spare >= TICK && !n.done) { stepNight(run, TICK); spare -= TICK; }
   }
-  draw();
+  if (n) {
+    for (const e of n.events.splice(0)) play(e);
+    if (n.done && !n.handled) { n.handled = true; afterNight(); }
+  }
+  if (run.money !== shownMoney) {
+    if (run.money > shownMoney) nudge('moneyBox', 'bump');
+    shownMoney = run.money;
+    refresh();
+  }
+  $('townText').textContent = run.town;
+  $('townBar').style.width = `${run.town / TUNE.town * 100}%`;
+  draw(dt, now / 1000);
   requestAnimationFrame(frame);
 }
-start();
-requestAnimationFrame((t) => { last = t; frame(t); });
-window.__game = { get run() { return run; } };
+
+if (!gl) {
+  $('end').hidden = false;
+  $('endTitle').textContent = 'This browser cannot show 3D';
+  $('endBody').textContent = 'The prototype needs WebGL2.';
+  $('again').hidden = true;
+} else {
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  buildGround();
+  buildMeshes();
+  MESH.sparkVao = gl.createVertexArray();
+  MESH.sparkBuffer = gl.createBuffer();
+  gl.bindVertexArray(MESH.sparkVao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, MESH.sparkBuffer);
+  [0, 1, 2].forEach((i) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 36, i * 12); });
+  buildTools();
+  start();
+  requestAnimationFrame((t) => { last = t; frame(t); });
+  window.__game = { get run() { return run; }, setSpeed(x) { speed = x; } };
+}
 </script>
 </body>
 </html>

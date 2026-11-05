@@ -4,111 +4,104 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
 const rules = html.slice(html.indexOf('// RULES-START'), html.indexOf('// RULES-END'));
-const api = new Function(`${rules}; return { TUNE, DEFENCES, SEGMENTS, ROUTES, newRun, place, startNight, stepNight, nextSeason, score, lightFire, fireable, oddsOf };`)();
-const { TUNE, DEFENCES, SEGMENTS, ROUTES, newRun, place, startNight, stepNight, nextSeason, score, lightFire, fireable, oddsOf } = api;
+const api = new Function(`${rules}; return { TUNE, DEFENCES, ROADS, SPOTS, newRun, place, startNight, stepNight, nextSeason, oddsOf };`)();
+const { TUNE, DEFENCES, ROADS, SPOTS, newRun, place, startNight, stepNight, nextSeason, oddsOf } = api;
 
-const OPEN = Object.keys(SEGMENTS).filter((s) => !SEGMENTS[s].closed);
+const PADS = SPOTS.filter((s) => s.kind === 'pad');
+const MARKS = SPOTS.filter((s) => s.kind === 'road');
+const free = (run, list) => list.filter((s) => !run.built[s.id]).sort((a, b) => (b.reach.length - a.reach.length));
 
-function share(run, seg) {
-  const odds = oddsOf(ROUTES, run.defences);
-  return ROUTES.reduce((sum, r, i) => sum + (r.segs.includes(seg) ? odds[i] : 0), 0);
+// Share of the herd a spot can touch at today's odds.
+function traffic(run, spot) {
+  const odds = oddsOf(run);
+  return spot.reach.reduce((sum, r) => sum + odds[r], 0);
+}
+
+function busiest(run, list) {
+  return free(run, list).sort((a, b) => traffic(run, b) - traffic(run, a))[0];
 }
 
 const PLAYERS = {
-  // Builds nothing and lights no fires.
-  idle: { build() {}, fire: false },
-  // Buys whatever it can afford in random places.
-  careless: {
-    build(run) {
-      for (let tries = 0; tries < 12; tries++) {
-        const types = Object.keys(DEFENCES);
-        place(run, types[Math.floor(run.rng() * 3)], OPEN[Math.floor(run.rng() * OPEN.length)]);
-      }
-    },
-    fire: false,
+  // Builds nothing.
+  idle() {},
+  // Buys whatever it can afford, anywhere.
+  careless(run) {
+    for (let tries = 0; tries < 16; tries++) {
+      const type = Object.keys(DEFENCES)[Math.floor(run.rng() * 3)];
+      const list = DEFENCES[type].spot === 'pad' ? PADS : MARKS;
+      const spot = list[Math.floor(run.rng() * list.length)];
+      place(run, type, spot.id);
+    }
   },
-  // A sensible first-time player: killers on the busiest open ground, no fires.
-  sensible: {
-    build(run) {
-      for (;;) {
-        const free = OPEN.filter((s) => !run.defences[s]).sort((a, b) => share(run, b) - share(run, a));
-        if (!free.length) return;
-        const type = run.money >= 120 && Object.values(run.defences).filter((d) => d === 'tower').length < 2 ? 'tower' : 'pit';
-        if (place(run, type, free[0])) return;
-      }
-    },
-    fire: false,
+  // A first-timer who has learned the basics: towers where the herd walks,
+  // spare money on pits, never a fence.
+  sensible(run) {
+    for (;;) {
+      const pad = busiest(run, PADS);
+      if (pad && !place(run, 'tower', pad.id)) continue;
+      const mark = busiest(run, MARKS);
+      if (mark && !place(run, 'pit', mark.id)) continue;
+      return;
+    }
   },
-  // The same, and it turns bands away from empty ground during the night.
-  skilled: {
-    build(run) { PLAYERS.sensible.build(run); },
-    fire: true,
+  // Steers: fences the outer roads so the herd walks past every tower on the middle road.
+  steerer(run) {
+    const count = (type) => Object.values(run.built).filter((d) => d.type === type).length;
+    for (;;) {
+      const fencesWanted = Math.min(Math.ceil(count('tower') * 0.6), 3) * 2;
+      if (count('fence') < fencesWanted) {
+        const r = count('fence') % 2 ? 2 : 0;
+        const s = free(run, MARKS).find((m) => m.road === r);
+        if (s && !place(run, 'fence', s.id)) continue;
+      }
+      const pad = free(run, PADS).find((s) => s.reach.includes(1));
+      if (pad && !place(run, 'tower', pad.id)) continue;
+      const mark = free(run, MARKS).find((s) => s.road === 1);
+      if (mark && !place(run, 'pit', mark.id)) continue;
+      return;
+    }
   },
 };
 
-// Kills still available along a route from a point on it.
-function killsAhead(run, route, from) {
-  const n = run.night;
-  let total = 0;
-  for (const seg of route.segs.slice(from)) total += n.capacity[seg] || 0;
-  return total;
-}
-
-// Near a junction, burn the way ahead if another way has more kills left.
-function fires(run) {
-  const n = run.night;
-  for (const band of n.bands) {
-    if (band.gone || n.time < band.starts || n.firesLeft <= 0) continue;
-    const route = ROUTES[band.route];
-    const next = route.segs[band.at + 1];
-    if (!next || !fireable(next)) continue;
-    if (band.metres < SEGMENTS[route.segs[band.at]].len * 0.5) continue;
-    const walked = route.segs.slice(0, band.at + 1);
-    const here = killsAhead(run, route, band.at + 1);
-    const best = Math.max(0, ...ROUTES.filter((r) => walked.every((s, i) => r.segs[i] === s) && r.segs[band.at + 1] !== next).map((r) => killsAhead(run, r, band.at + 1)));
-    if (best >= here + 2) lightFire(run, next);
-  }
-}
-
 function play(seed, player) {
   const run = newRun(seed);
-  const money = [];
   for (;;) {
-    player.build(run);
-    money.push(run.money);
+    player(run);
     startNight(run);
-    while (!run.night.done) {
-      if (player.fire) fires(run);
-      stepNight(run, 0.05);
-    }
+    while (!run.night.done) stepNight(run, 1 / 30);
     if (run.over) break;
     nextSeason(run);
   }
-  return { won: run.over === 'won', town: run.town, score: score(run), season: run.season, money };
+  return { won: run.over === 'won', town: run.town, season: run.season };
 }
 
-const RUNS = Number(process.env.RUNS || 2000);
+const RUNS = Number(process.env.RUNS || 1000);
 
 function report() {
   const parts = [];
   for (const name of Object.keys(PLAYERS)) {
-    let wins = 0, town = 0;
+    let wins = 0, town = 0, season = 0;
     for (let seed = 1; seed <= RUNS; seed++) {
       const r = play(seed, PLAYERS[name]);
       wins += r.won ? 1 : 0;
       town += r.won ? r.town : 0;
+      season += r.season;
     }
-    parts.push(`${name} ${(wins / RUNS * 100).toFixed(0)}%` + (wins ? ` (town ${(town / wins).toFixed(0)})` : ''));
+    parts.push(`${name} ${(wins / RUNS * 100).toFixed(0)}%` + (wins ? ` (town ${(town / wins).toFixed(0)})` : ` (falls season ${(season / RUNS).toFixed(1)})`));
   }
   return parts.join('  ');
 }
 
 if (process.env.SWEEP) {
-  for (const [town, herds, cap] of [[60, [10, 13, 16, 19, 22], 2], [55, [10, 13, 16, 19, 22], 2], [60, [11, 14, 17, 20, 23], 2], [60, [11, 14, 17, 20, 23], 3], [55, [11, 14, 17, 20, 23], 3]]) {
-    TUNE.town = town; TUNE.herds = herds; DEFENCES.pit.cap = cap;
-    console.log(`town ${town} herds ${herds.join(',')} pit ${cap}: ${report()}`);
+  const base = { ...TUNE }, reload = DEFENCES.tower.reload;
+  for (const set of JSON.parse(process.env.SWEEP)) {
+    Object.assign(TUNE, base, set);
+    DEFENCES.tower.reload = set.reload || reload;
+    console.log(JSON.stringify(set), report());
   }
 } else {
   console.log(report());
-  console.log('odds', oddsOf(ROUTES, {}).map((o) => o.toFixed(2)).join(' '), 'night seconds about', ((5000 / TUNE.metresPerSecond) + 5 * TUNE.bandSpacing).toFixed(0));
+  console.log('road lengths', ROADS.map((r) => r.len.toFixed(0)).join(' '));
+  console.log('default odds', oddsOf(newRun(1)).map((o) => o.toFixed(2)).join(' '));
+  console.log('pads reach', PADS.map((s) => s.reach.join('')).join(' '));
 }
