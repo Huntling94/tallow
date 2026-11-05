@@ -24,6 +24,8 @@ const CLICK_TOLERANCE := 12.0
 const HOVER_WIDTH := 12.0
 const SPOT_RADIUS := 5.0
 const STRIPE_LENGTH := 16.0
+const NOTE_HEIGHT := 1.2
+const NOTE_MARGIN := 4.0
 
 var _layout: ValleyLayout
 var _graph: RouteGraph
@@ -181,6 +183,14 @@ func _draw_hover_note() -> void:
 		return
 	var text := "%.0f%% of the herd" % hover_share()
 	var at := _layout.point_at(_hover, 0.5) + Vector2(10, -8)
+	var pixels := maxi(int(LABEL_SIZE * _scale()), 8)
+	var width := (
+		ThemeDB.fallback_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x
+	)
+	var height := float(pixels) * NOTE_HEIGHT
+	var corner := _to_screen(at) - Vector2(NOTE_MARGIN, height - NOTE_MARGIN)
+	var box := Rect2(corner, Vector2(width + NOTE_MARGIN * 2.0, height + NOTE_MARGIN))
+	draw_rect(box, ValleyLayout.GROUND_COLOR)
 	_draw_text(at, text, ValleyLayout.LAMP_COLOR, LABEL_SIZE)
 
 
