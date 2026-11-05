@@ -23,7 +23,7 @@ The simulation can now play a whole 5-season mini-run, but its only output is a 
 - Any change to `game/src/sim/` or to the balance files in `game/data/`. No read-only additions to the simulation are needed.
 - Placing defences or giving commands from the viewer. It only watches; the plan is fixed to `demo`.
 - Reading telemetry files. The viewer runs the simulation itself.
-- Showing harvest and prices. Those events arrive in step 5, and the viewer ignores them until a later change teaches it to show them.
+- Showing harvest and prices. The `harvest` event from step 5 (spec 0044) is ignored until a later change teaches the viewer to show it (#49).
 - Sound, final art, and 3D.
 
 ## Acceptance criteria
@@ -59,7 +59,7 @@ None. The viewer reads events and writes nothing.
 - **The map layout is presentation, not rules.** The valley data has no coordinates, so a new `ValleyLayout` holds a hand-placed path for each segment, on the mock-up's 600 by 440 sheet. It lives in GDScript beside the viewer rather than in `game/data/`, because every file there counts towards the rules version, and redrawing a line must not mark runs as coming from different rules. A beast's distance along a path is a share of the segment, not metres, so a segment's drawn length can differ from its `length_m`.
 - **Kills land where the rules put them.** A defence acts when a band enters its segment, so the marker sits just inside the start of the segment, not at its midpoint.
 - **Spread within a band.** Each beast has a fixed offset to the side and behind, worked out from its number, so a band reads as a group. This is a viewer-only look and draws no random numbers.
-- **Known events only.** The replay reads `season_started`, `command_applied`, `route_options`, `route_chosen`, `herd_arrived`, `beast_killed`, `breach` and `season_ended`. The harvest step is adding events at the same time; they are skipped, so money from sales will show only when a known event next reports it, until a follow-up adds them.
+- **Known events only.** The replay reads `season_started`, `command_applied`, `route_options`, `route_chosen`, `herd_arrived`, `beast_killed`, `breach` and `season_ended`. Anything else is skipped. That includes `harvest` (spec 0044), so a season's income appears at its last tick through `season_ended`, with no log line of its own, until #49 adds it.
 - **Season end.** `season_ended` carries the tick the replay stops on. Every surviving beast has breached by then.
 - **Reaching it on the web.** A button is the smallest change, and it takes the click before the dusk camera's click-to-replay does.
 

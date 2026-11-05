@@ -260,6 +260,13 @@ func test_building_a_replay_leaves_the_events_as_they_were() -> void:
 	assert_str(str(events)).is_equal(before)
 
 
+func test_a_season_with_no_levy_logs_none() -> void:
+	var events: Array[Dictionary] = [_event("season_started", 0, {"levy": 0, "money": 400})]
+	var replay := SeasonReplay.new(_setup(), events, 1)
+	assert_array(Array(replay.frame(0.0)["log"])).is_empty()
+	assert_int(replay.frame(0.0)["money"]).is_equal(400)
+
+
 func test_the_log_grows_with_the_season_and_names_things_for_people() -> void:
 	var events := _opening(3)
 	var kill := {"band": 1, "segment": "ford_bank", "defence": "pit"}

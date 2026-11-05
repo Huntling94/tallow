@@ -17,6 +17,9 @@ const PANEL_WIDTH := 340.0
 const HEADING_SIZE := 22
 const BAR_HEIGHT := 12.0
 
+## The valley to replay. Only tests change it.
+@export var valley_id := VALLEY_ID
+
 var season := 1
 var run_seed := DEFAULT_SEED
 var playhead := 0.0
@@ -34,7 +37,6 @@ var _odds_labels := {}  # route id -> Label
 var _updating_slider := false
 
 @onready var _map: RouteMap = %Map
-@onready var _panel: VBoxContainer = %Panel
 @onready var _title: Label = %Title
 @onready var _totals: Label = %Totals
 @onready var _log: Label = %Log
@@ -45,7 +47,9 @@ var _updating_slider := false
 
 
 func _ready() -> void:
-	_setup = GameData.load_setup(VALLEY_ID, HERD_ID)
+	# First, so there is a way out even if the data cannot be loaded.
+	(%Back as Button).pressed.connect(_back_to_valley)
+	_setup = GameData.load_setup(valley_id, HERD_ID)
 	_plan = GameData.load_plan(PLAN_ID)
 	if _setup == null or _plan.is_empty():
 		_show_problem("The game data could not be loaded.")
@@ -170,7 +174,6 @@ func _show_problem(text: String) -> void:
 func _build_controls() -> void:
 	_play.pressed.connect(toggle_play)
 	(%Restart as Button).pressed.connect(restart)
-	(%Back as Button).pressed.connect(_back_to_valley)
 	_slider.value_changed.connect(_on_slider_moved)
 	_seed_box.max_value = MAX_SEED
 	_seed_box.value = DEFAULT_SEED

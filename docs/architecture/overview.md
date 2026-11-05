@@ -254,7 +254,7 @@ Because the simulation knows the truth, every model in the repository can be che
 | Layer | Where | Does | Never does |
 |---|---|---|---|
 | Simulation | `game/src/sim/` | Owns every game rule and all game state. Advances in fixed ticks from commands and a seed. Emits events. | Touch scenes, nodes, rendering, input, files or the wall clock. Use unseeded randomness. |
-| Presentation | `game/src/world/`, `camera/`, `player/`, `ui/`, `viewer/` | Shows simulation state in 3D, animates between ticks, turns player input into commands. | Change simulation state directly. |
+| Presentation | `game/src/world/`, `camera/`, `player/`, `ui/`, `viewer/` | Shows simulation state in 3D (and in the top-down 2D viewer, which replays a run it plays itself), animates between ticks, turns player input into commands. | Change simulation state directly. |
 | Headless runner | `game/tools/` | Runs seeded seasons with bots and no window. | Contain rules of its own. |
 | Data loader | `game/src/data/` | Reads game data files and passes the values to the simulation at the start of a run. | Hold or change game state. |
 | Telemetry writer | `game/src/telemetry/` | Turns simulation events into JSON Lines files. | Decide what happens in the game. |

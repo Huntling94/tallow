@@ -99,7 +99,8 @@ func _read(event: Dictionary) -> void:
 	var text := ""
 	match event["type"]:
 		"season_started":
-			text = "Levy of %d paid" % event["levy"]
+			if event["levy"] > 0:
+				text = "Levy of %d paid" % event["levy"]
 			_money.append({"tick": tick, "money": event["money"]})
 		"command_applied":
 			var defence := _defence_name(event["defence"])
