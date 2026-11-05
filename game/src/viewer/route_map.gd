@@ -207,8 +207,6 @@ func _draw_beast(band: Dictionary, index: int) -> void:
 
 func _draw_breach_marks() -> void:
 	var gate: Vector2 = ValleyLayout.PATHS["town_approach"][-1]
-	var note := ""
-	var note_color := ValleyLayout.DANGER_COLOR
 	for mark: Dictionary in _frame["marks"]:
 		if mark["kind"] != SeasonReplay.BREACH or mark["age"] > BREACH_NOTE_TICKS:
 			continue
@@ -217,11 +215,12 @@ func _draw_breach_marks() -> void:
 		color.a = fresh
 		var radius := (GATE_GLOW_RADIUS + 18.0 * (1.0 - fresh)) * _scale()
 		draw_arc(_to_screen(gate), radius, 0.0, TAU, 32, color, 3.0, true)
-		# Bands arrive close together, so only the newest breach is named.
-		note = "BREACH %d" % mark["beasts"]
-		note_color = color
-	if note != "":
-		_draw_text(gate + Vector2(-32, 5), note, note_color, LABEL_SIZE, true)
+	var note: Dictionary = _frame["breach_note"]
+	if not note.is_empty() and note["age"] <= BREACH_NOTE_TICKS:
+		var note_color := ValleyLayout.DANGER_COLOR
+		note_color.a = 1.0 - float(note["age"]) / BREACH_NOTE_TICKS
+		var text := "BREACH %d" % note["beasts"]
+		_draw_text(gate + Vector2(-32, 5), text, note_color, LABEL_SIZE, true)
 
 
 func _draw_text(

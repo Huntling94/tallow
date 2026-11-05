@@ -133,6 +133,22 @@ func test_a_band_leaves_the_map_at_its_breach() -> void:
 	assert_int(after["marks"][0]["beasts"]).is_equal(3)
 
 
+func test_bands_breaching_on_the_same_tick_count_together_in_the_note() -> void:
+	var events := _opening(2)
+	events.append(_event("route_chosen", 0, {"band": 2, "beasts": 3, "route": LOW_FORD}))
+	events.append(_event("route_chosen", 0, {"band": 3, "beasts": 4, "route": LOW_FORD}))
+	events.append(_event("breach", 10, {"band": 1, "beasts": 2, "cost": 20, "money": 380}))
+	events.append(_event("breach", 12, {"band": 2, "beasts": 3, "cost": 30, "money": 350}))
+	events.append(_event("breach", 12, {"band": 3, "beasts": 4, "cost": 40, "money": 310}))
+	var replay := SeasonReplay.new(_setup(), events, 1)
+
+	assert_dict(replay.frame(9.0)["breach_note"]).is_empty()
+	assert_int(replay.frame(11.0)["breach_note"]["beasts"]).is_equal(2)
+	assert_int(replay.frame(12.0)["breach_note"]["beasts"]).is_equal(7)
+	assert_float(replay.frame(12.5)["breach_note"]["age"]).is_equal(0.5)
+	assert_int(replay.frame(12.0)["breached"]).is_equal(9)
+
+
 func test_money_and_totals_change_only_when_their_event_is_reached() -> void:
 	var events := _opening(4)
 	var built := {"command": "build", "defence": "pit", "segment": "ford_bank"}

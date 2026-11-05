@@ -82,6 +82,15 @@ func test_the_screen_fits_the_default_window() -> void:
 	assert_float(screen.get_combined_minimum_size().y).is_less_equal(window_height)
 
 
+func test_a_resize_redraws_the_log_while_paused() -> void:
+	var viewer := _viewer()
+	viewer.toggle_play()
+	var log_label := viewer.get_node("%Log") as Label
+	log_label.text = ""
+	(log_label.get_parent() as Control).resized.emit()
+	assert_str(log_label.text).is_not_empty()
+
+
 func test_the_restart_button_goes_back_to_the_start_and_plays() -> void:
 	var viewer := _viewer()
 	viewer.seek(6.0)

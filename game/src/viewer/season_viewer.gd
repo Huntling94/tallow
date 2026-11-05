@@ -13,8 +13,6 @@ const DEFAULT_SEED := 42
 const MAX_SEED := 2147483647
 const TICKS_PER_SECOND := 2.0
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
-const PANEL_WIDTH := 340.0
-const HEADING_SIZE := 22
 const BAR_HEIGHT := 12.0
 
 ## The valley to replay. Only tests change it.
@@ -62,6 +60,8 @@ func _ready() -> void:
 	_map.set_run(_setup, _layout)
 	_build_controls()
 	load_seed(DEFAULT_SEED)
+	# The browser window can change size while paused.
+	(_log.get_parent() as Control).resized.connect(_refresh)
 
 
 func _process(delta: float) -> void:

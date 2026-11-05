@@ -85,6 +85,7 @@ func frame(time: float) -> Dictionary:
 			log_lines.append(line["text"])
 	return {
 		"bands": bands,
+		"breach_note": _breach_note(time),
 		"breached": breached,
 		"defences": _defences,
 		"killed": killed,
@@ -158,6 +159,20 @@ static func _progress(ticks: Array[int], time: float) -> float:
 		if time < ticks[index + 1]:
 			return index + (time - ticks[index]) / (ticks[index + 1] - ticks[index])
 	return float(ticks.size() - 1)
+
+
+## The newest breach so far, as {beasts, age}: bands that reach the gate on
+## the same tick count together. Empty before the first breach.
+func _breach_note(time: float) -> Dictionary:
+	var note := {}
+	for breach: Dictionary in _breaches:
+		if breach["tick"] > time:
+			continue
+		var age: float = time - breach["tick"]
+		if note.is_empty() or age < note["age"]:
+			note = {"age": age, "beasts": 0}
+		note["beasts"] += breach["beasts"]
+	return note
 
 
 func _money_at(time: float) -> int:

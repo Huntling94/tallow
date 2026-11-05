@@ -67,6 +67,5 @@ func test_a_beast_held_back_stays_on_the_route_at_the_entry() -> void:
 	assert_float((spot["position"] as Vector2).distance_to(entry)).is_less(JOIN_TOLERANCE)
 
 
-func test_a_beasts_place_in_its_band_never_changes() -> void:
-	assert_that(ValleyLayout.beast_spread(2, 3)).is_equal(ValleyLayout.beast_spread(2, 3))
+func test_beasts_in_a_band_stand_in_different_places() -> void:
 	assert_that(ValleyLayout.beast_spread(2, 3)).is_not_equal(ValleyLayout.beast_spread(2, 4))

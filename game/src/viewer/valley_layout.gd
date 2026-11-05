@@ -39,7 +39,6 @@ const GROUND_COLOR := Color("121a1f")
 const PANEL_COLOR := Color("19232a")
 const INK_COLOR := Color("e4e6e1")
 const MUTED_COLOR := Color("9aa5a3")
-const RULE_COLOR := Color("2d3a42")
 const TERRAIN_COLOR := Color("1e2a31")
 const LAMP_COLOR := Color("f0a23c")
 const DANGER_COLOR := Color("e0715f")
@@ -52,7 +51,7 @@ const DEFENCE_INSET := 18.0
 
 const SPREAD_SIDE := 13.0
 const SPREAD_BACK := 16.0
-## Fractions of the golden ratio spread a sequence evenly without any random
+## Fixed irrational steps spread a sequence evenly without any random
 ## numbers, so a beast keeps its place in the band on every frame.
 const SIDE_STEP := 0.618034
 const BACK_STEP := 0.754878
