@@ -15,7 +15,13 @@ const DEMO_ROUTES_42: Array[String] = [
 ]
 const DEMO_KILLED_42 := 2
 const DEMO_BREACHED_42 := 22
-const DEMO_FINAL_MONEY_42 := -530
+## Spec 0044: start 600, no levy, a kill earns 20. Routes, kills and breaches
+## above are unchanged from spec 0040; only money moved.
+const DEMO_HARVEST_BEASTS_42 := 2
+const DEMO_HARVEST_GOODS_42 := 8
+const DEMO_HARVEST_INCOME_42 := 40
+const DEMO_HARVEST_MONEY_42 := 260
+const DEMO_FINAL_MONEY_42 := -390
 
 var _setup: RunSetup
 
@@ -38,6 +44,9 @@ func test_seed_42_with_the_demo_plan() -> void:
 	var events := run.run(5, GameData.load_plan("demo"))
 	var first_season := events.filter(func(e: Dictionary) -> bool: return e["season"] == 1)
 	var first_end: Dictionary = first_season.filter(_of_type("season_ended"))[0]
+	var harvests := first_season.filter(_of_type("harvest"))
+	assert_int(harvests.size()).is_equal(1)
+	var first_harvest: Dictionary = {} if harvests.is_empty() else harvests[0]
 	(
 		assert_array(
 			first_season.filter(_of_type("route_chosen")).map(
@@ -48,6 +57,10 @@ func test_seed_42_with_the_demo_plan() -> void:
 	)
 	assert_int(first_end["killed"]).is_equal(DEMO_KILLED_42)
 	assert_int(first_end["breached"]).is_equal(DEMO_BREACHED_42)
+	assert_int(first_harvest.get("beasts", -1)).is_equal(DEMO_HARVEST_BEASTS_42)
+	assert_int(first_harvest.get("goods", -1)).is_equal(DEMO_HARVEST_GOODS_42)
+	assert_int(first_harvest.get("income", -1)).is_equal(DEMO_HARVEST_INCOME_42)
+	assert_int(first_harvest.get("money", -1)).is_equal(DEMO_HARVEST_MONEY_42)
 	assert_int(run.state.money).is_equal(DEMO_FINAL_MONEY_42)
 
 

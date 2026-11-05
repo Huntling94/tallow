@@ -1,7 +1,7 @@
 class_name GameData
 extends RefCounted
 ## Reads the game's data files and turns them into the typed values the
-## simulation takes (specs 0037 and 0040). The simulation never reads files
+## simulation takes (specs 0037, 0040 and 0044). The simulation never reads files
 ## itself (ADR-0002); this loader does, then checks what it read. Every
 ## problem is reported with push_error, and the loader returns null.
 
@@ -34,6 +34,8 @@ const RULE_FIELDS := {
 	"breach_cost_per_beast": TYPE_INT,
 	"beast_speed_m_per_tick": TYPE_INT,
 	"band_spacing_ticks": TYPE_INT,
+	"goods_per_beast": TYPE_INT,
+	"price_per_good": TYPE_INT,
 }
 const COMMAND_FIELDS := {"command": TYPE_STRING, "defence": TYPE_STRING, "segment": TYPE_STRING}
 
@@ -169,22 +171,31 @@ static func load_defences() -> Dictionary:
 static func load_run_rules() -> RunRules:
 	var path := DATA.path_join("run_rules.json")
 	var data: Variant = _read_json(path)
-	if data == null:
-		return null
-	var problems := _check_fields(data, RULE_FIELDS, "")
-	if problems.is_empty():
-		for field: String in ["beast_speed_m_per_tick", "band_spacing_ticks"]:
-			if _int(data, field) < 1:
-				problems.append("%s must be at least 1" % field)
-	if not _ok(path, problems):
+	if data == null or not _ok(path, check_run_rules(data)):
 		return null
 	return RunRules.new(
 		_int(data, "start_money"),
 		_int(data, "season_levy"),
 		_int(data, "breach_cost_per_beast"),
 		_int(data, "beast_speed_m_per_tick"),
-		_int(data, "band_spacing_ticks")
+		_int(data, "band_spacing_ticks"),
+		_int(data, "goods_per_beast"),
+		_int(data, "price_per_good")
 	)
+
+
+## Problems with parsed run rules, one line each; empty if they are usable.
+static func check_run_rules(data: Variant) -> PackedStringArray:
+	var problems := _check_fields(data, RULE_FIELDS, "")
+	if not problems.is_empty():
+		return problems
+	for field: String in ["beast_speed_m_per_tick", "band_spacing_ticks"]:
+		if _int(data, field) < 1:
+			problems.append("%s must be at least 1" % field)
+	for field: String in ["goods_per_beast", "price_per_good"]:
+		if _int(data, field) < 0:
+			problems.append("%s must not be negative" % field)
+	return problems
 
 
 ## A scripted plan from game/data/plans: season number -> list of commands.
