@@ -54,7 +54,7 @@ func test_commands_are_reported_in_telemetry() -> void:
 	)
 	assert_int(applied.size()).is_equal(1)
 	assert_int(applied[0]["cost"]).is_equal(80)
-	assert_int(applied[0]["money"]).is_equal(300 + 100 - 80)
+	assert_int(applied[0]["money"]).is_equal(600 + 0 - 80)
 	assert_int(rejected.size()).is_equal(1)
 	assert_str(rejected[0]["reason"]).is_equal("segment_taken")
 

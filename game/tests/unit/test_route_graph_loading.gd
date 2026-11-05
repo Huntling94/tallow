@@ -53,13 +53,24 @@ func test_the_defences_and_run_rules_load() -> void:
 	assert_array(setup.defences.keys()).contains_exactly_in_any_order(
 		["fence", "pit", "harpoon_tower"]
 	)
-	assert_int(setup.rules.start_money).is_equal(300)
+	assert_int(setup.rules.start_money).is_equal(600)
+	assert_int(setup.rules.goods_per_beast).is_equal(4)
+	assert_int(setup.rules.price_per_good).is_equal(5)
 
 
 func test_the_demo_plan_loads_by_season() -> void:
 	var plan := GameData.load_plan("demo")
 	assert_array(plan.keys()).contains_exactly_in_any_order([1, 2])
 	assert_str(plan[1][0]["defence"]).is_equal("fence")
+
+
+func test_the_chokepoints_plan_builds_a_tower_on_each_shared_segment() -> void:
+	var plan := GameData.load_plan("chokepoints")
+	assert_array(plan.keys()).contains_exactly([1])
+	var segments: Array = plan[1].map(func(c: Dictionary) -> String: return c["segment"])
+	assert_array(segments).contains_exactly(["neck_pass", "town_approach"])
+	for command: Dictionary in plan[1]:
+		assert_str(command["defence"]).is_equal("harpoon_tower")
 
 
 func test_an_unknown_segment_is_reported_with_its_route() -> void:
