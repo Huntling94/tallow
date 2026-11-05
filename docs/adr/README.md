@@ -17,3 +17,4 @@ An ADR records one significant or hard-to-reverse decision: the context, the opt
 | [0002](0002-sim-render-separation.md) | Keep one deterministic simulation, separate from rendering | Accepted |
 | [0003](0003-telemetry-format.md) | Telemetry as versioned JSON Lines, converted to Parquet for analysis | Accepted |
 | [0004](0004-architecture-documentation-c4.md) | Document the architecture with the C4 model in Mermaid | Accepted |
+| [0005](0005-beasts-choose-at-forks.md) | Simulate the night as individual beasts choosing at forks | Proposed |
