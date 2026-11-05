@@ -15,6 +15,7 @@ const MAX_SEED := 2147483647
 const TICKS_PER_SECOND := 2.0
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
 const BAR_HEIGHT := 12.0
+const DEFENCE_TEXT_SIZE := 13
 const HINT_START := "Rings mark open segments. Click this season's defence to take it back."
 const HINT_PICK_FIRST := "Pick a defence first."
 const REASONS := {
@@ -343,6 +344,8 @@ func _add_defence_buttons() -> void:
 		var button := Button.new()
 		button.text = _defence_text(_setup.defences[defence_id])
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.clip_text = true
+		button.add_theme_font_size_override("font_size", DEFENCE_TEXT_SIZE)
 		button.toggle_mode = true
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(pick_defence.bind(defence_id))

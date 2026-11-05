@@ -107,6 +107,20 @@ func test_the_screen_fits_the_default_window_in_each_phase() -> void:
 	assert_float(screen.get_combined_minimum_size().y).is_less_equal(window_height)
 
 
+func test_the_panel_keeps_its_width_so_the_map_does_not_jump_between_phases() -> void:
+	var viewer := _viewer()
+	var panel := viewer.get_node("%Panel") as Control
+	var width := panel.custom_minimum_size.x
+	await get_tree().process_frame
+	assert_float(panel.get_combined_minimum_size().x).is_equal(width)
+	viewer.release()
+	await get_tree().process_frame
+	assert_float(panel.get_combined_minimum_size().x).is_equal(width)
+	viewer.seek(9999.0)
+	await get_tree().process_frame
+	assert_float(panel.get_combined_minimum_size().x).is_equal(width)
+
+
 func test_a_resize_redraws_the_log_while_paused() -> void:
 	var viewer := _watching()
 	viewer.toggle_play()
