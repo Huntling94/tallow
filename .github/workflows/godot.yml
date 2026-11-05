@@ -80,3 +80,5 @@ jobs:
           uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/run_42.jsonl
           uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/demo_42.jsonl
           uv run --directory analysis --locked python -m tallow_analysis.check_run ../telemetry/chokepoints_42.jsonl
+          grep -q 'grey_box' telemetry/chokepoints_42.jsonl
+          ! grep -q 'command_rejected' telemetry/chokepoints_42.jsonl

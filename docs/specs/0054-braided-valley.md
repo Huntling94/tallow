@@ -27,6 +27,8 @@ So this step changes all three together. A *braided* valley is one whose routes 
 - **A tighter budget.** `start_money` goes from 600 to 300, pit capacity from 3 to 2 a night, and tower capacity from 6 to 8 a night.
 - **The `demo` plan moves** so it still works: all three builds land in season 1, and the pit moves from `neck_pass` to `ridge_drop`.
 - **The map reads the new valley.** Each of the five routes has its own colour, a segment on two routes shows both, and closed segments have no ring.
+- **Room for five routes.** The odds panel becomes one row per route, and the band count on each route moves from the totals into those rows.
+- **`--valley` on the headless runner,** so the `chokepoints` plan still runs on `grey_box` now that the default is `braided`.
 - **Herd through a segment.** While preparing, hovering a segment shows the share of the herd expected to pass it, added up from the current odds. This is what makes coverage and steering readable.
 
 ## Out of scope
@@ -83,7 +85,7 @@ So this step changes all three together. A *braided* valley is one whose routes 
 - **The rule stays in the simulation (ADR-0002).** `RouteGraph` holds the flag and `RunState.build` applies it. `DefenceDraft` gets the same refusal through `build`, so the viewer adds no rule.
 - **The same paths draw both valleys.** `braided` keeps `grey_box`'s ids, so `ValleyLayout.PATHS` gains two entries and the map draws only segments in the loaded graph. Map layout stays out of `game/data/`, as in spec 0043.
 - **Rules version.** It changes, as a new valley and new numbers should.
-- **The search behind the table.** 40 seeds, plans bought in season 1 only, by hand and by adding the best next defence. It is a rough guide, not a balance result. Money is negative on these plans because nothing is reinvested in later seasons.
+- **The search behind the table.** 40 seeds, plans bought in season 1 only, by hand and by adding the best next defence. It is a rough guide, not a balance result. Money is negative on these plans. Play showed why that matters: a player who spends the budget is in debt after season 1 and cannot build again (#56).
 
 ## Open questions
 

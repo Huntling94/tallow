@@ -88,7 +88,7 @@ godot --headless --path game -s res://tools/headless_runner.gd -- --seed 42 --se
 uv run --directory analysis python -m tallow_analysis.check_run ../telemetry/run_42.jsonl
 ```
 
-The runner's `--out` path is relative to `game/`; `telemetry/` is git-ignored. The same seed always gives the same file. `--seasons` defaults to 5, the M1 mini-run. Add `--plan demo` to play the scripted commands in `game/data/plans/demo.json`; without it, no defences are built. To open the notebooks, install their extra dependencies with `uv sync --group notebook` in `analysis/`, then open `notebooks/` in Jupyter or VS Code with the `analysis/.venv` kernel.
+The runner's `--out` path is relative to `game/`; `telemetry/` is git-ignored. The same seed always gives the same file. `--seasons` defaults to 5, the M1 mini-run. Add `--plan demo` to play the scripted commands in `game/data/plans/demo.json`; without it, no defences are built. The runner plays the `braided` valley unless `--valley` names another. The `chokepoints` plan needs `--valley grey_box`, because `braided` closes the segments it builds on, and every build would be rejected. To open the notebooks, install their extra dependencies with `uv sync --group notebook` in `analysis/`, then open `notebooks/` in Jupyter or VS Code with the `analysis/.venv` kernel.
 
 ## Conduct and security
 

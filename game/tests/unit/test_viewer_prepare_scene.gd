@@ -229,6 +229,11 @@ func test_a_whole_run_of_choices_matches_a_direct_run() -> void:
 	viewer.release()
 	var builds := [[], [["fence", FORD]], []]
 	assert_str(str(viewer.events())).is_equal(str(_direct_run(42, builds)))
+	var applied := viewer.events().filter(
+		func(e: Dictionary) -> bool: return e["type"] == "command_applied"
+	)
+	assert_int(applied.size()).is_equal(1)
+	assert_int(applied[0]["season"]).is_equal(2)
 
 
 func test_the_night_plays_and_placing_cannot_change_it() -> void:

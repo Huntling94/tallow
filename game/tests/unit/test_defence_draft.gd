@@ -73,6 +73,15 @@ func test_several_defences_over_two_seasons_match_the_seasons_they_make() -> voi
 	_assert_matches_the_season(second, run)
 
 
+func test_money_carried_from_an_earlier_season_can_be_spent() -> void:
+	var setup := GameData.load_setup("braided", "steady")
+	var run := _run(setup)
+	run.play_season([])
+	var draft := DefenceDraft.new(setup, run.state)
+	assert_str(draft.place("fence", "ford_crossing")).is_empty()
+	_assert_matches_the_season(draft, run)
+
+
 func test_no_defences_shows_the_odds_of_an_empty_season() -> void:
 	var setup := _setup()
 	var run := _run(setup)

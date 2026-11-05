@@ -8,6 +8,27 @@ const SETTINGS := {
 	"modifier": null,
 	"bot_strategy": "none",
 }
+const DEFAULT_SEASONS := 5
+
+
+## The options in the runner's command-line arguments, or {} if they are not
+## usable.
+static func parse_args(args: PackedStringArray) -> Dictionary:
+	var options := {"seasons": DEFAULT_SEASONS, "plan": "", "valley": SETTINGS["valley"]}
+	if args.size() % 2 != 0:
+		return {}
+	for index: int in range(0, args.size(), 2):
+		var flag := args[index]
+		var value := args[index + 1]
+		if flag in ["--seed", "--seasons"] and value.is_valid_int():
+			options[flag.trim_prefix("--")] = value.to_int()
+		elif flag in ["--out", "--plan", "--valley"]:
+			options[flag.trim_prefix("--")] = value
+		else:
+			return {}
+	if not (options.has("seed") and options.has("out")) or options["seasons"] < 1:
+		return {}
+	return options
 
 
 ## Runs `seasons` seasons from `run_seed` and writes the telemetry to

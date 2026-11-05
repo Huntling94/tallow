@@ -11,13 +11,10 @@ func _viewer() -> SeasonViewer:
 	return viewer
 
 
-## A viewer past its first release, watching season 1.
 func _setup() -> RunSetup:
 	return GameData.load_setup("braided", "steady")
 
 
-## The same choices, played straight on the simulation. `seasons` holds one
-## list of [defence, segment] pairs for each season.
 func _text(viewer: SeasonViewer, node: String) -> String:
 	return (viewer.get_node(node) as Label).text
 

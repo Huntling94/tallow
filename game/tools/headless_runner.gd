@@ -11,11 +11,10 @@ extends SceneTree
 ## because braided closes the segments it builds on.
 
 const USAGE := "usage: -- --seed <int> --out <file> [--seasons <int>] [--plan <id>] [--valley <id>]"
-const DEFAULT_SEASONS := 5
 
 
 func _initialize() -> void:
-	var options := _parse(OS.get_cmdline_user_args())
+	var options := HeadlessRun.parse_args(OS.get_cmdline_user_args())
 	if options.is_empty():
 		printerr(USAGE)
 		quit(2)
@@ -37,23 +36,3 @@ func _initialize() -> void:
 		return
 	print("Wrote %s" % out_path)
 	quit(0)
-
-
-func _parse(args: PackedStringArray) -> Dictionary:
-	var options := {
-		"seasons": DEFAULT_SEASONS, "plan": "", "valley": HeadlessRun.SETTINGS["valley"]
-	}
-	if args.size() % 2 != 0:
-		return {}
-	for index: int in range(0, args.size(), 2):
-		var flag := args[index]
-		var value := args[index + 1]
-		if flag in ["--seed", "--seasons"] and value.is_valid_int():
-			options[flag.trim_prefix("--")] = value.to_int()
-		elif flag in ["--out", "--plan", "--valley"]:
-			options[flag.trim_prefix("--")] = value
-		else:
-			return {}
-	if not (options.has("seed") and options.has("out")) or options["seasons"] < 1:
-		return {}
-	return options

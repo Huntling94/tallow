@@ -161,6 +161,22 @@ func test_a_run_with_the_chokepoints_plan_writes_harvests_at_schema_1() -> void:
 	assert_int(beasts).is_greater(0)
 
 
+func test_the_runner_reads_a_valley_and_defaults_to_the_played_one() -> void:
+	var base := PackedStringArray(["--seed", "42", "--out", "a.jsonl"])
+	assert_str(HeadlessRun.parse_args(base)["valley"]).is_equal("braided")
+	var chosen := base + PackedStringArray(["--valley", "grey_box", "--plan", "chokepoints"])
+	var options := HeadlessRun.parse_args(chosen)
+	assert_str(options["valley"]).is_equal("grey_box")
+	assert_str(options["plan"]).is_equal("chokepoints")
+
+
+func test_the_runner_refuses_arguments_it_cannot_use() -> void:
+	assert_dict(HeadlessRun.parse_args(PackedStringArray(["--seed", "x"]))).is_empty()
+	assert_dict(HeadlessRun.parse_args(PackedStringArray(["--seed"]))).is_empty()
+	var unknown := PackedStringArray(["--seed", "1", "--out", "a", "--moon", "b"])
+	assert_dict(HeadlessRun.parse_args(unknown)).is_empty()
+
+
 func test_an_unknown_valley_stops_the_run() -> void:
 	var path := OUT.path_join("no_valley.jsonl")
 	var folders := RulesVersion.RULE_FOLDERS

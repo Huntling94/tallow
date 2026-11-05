@@ -98,11 +98,11 @@ func _draw() -> void:
 	_draw_routes()
 	_draw_places()
 	_draw_open_spots()
-	_draw_hover_note()
 	_draw_defences()
 	_draw_kill_marks()
 	_draw_bands()
 	_draw_breach_marks()
+	_draw_hover_note()
 
 
 ## Map units to pixels: the whole sheet, centred, at the largest scale that fits.

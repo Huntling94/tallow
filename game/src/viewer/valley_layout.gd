@@ -29,7 +29,7 @@ const PATHS := {
 const LABELS := {
 	"cairn_pass": {"at": Vector2(106, 240), "right_aligned": true},
 	"the_saddle": {"at": Vector2(172, 198), "right_aligned": false},
-	"split_ridge": {"at": Vector2(328, 170), "right_aligned": false},
+	"split_ridge": {"at": Vector2(304, 165), "right_aligned": true},
 	"the_spur": {"at": Vector2(340, 300), "right_aligned": false},
 	"low_ford": {"at": Vector2(482, 180), "right_aligned": false},
 }
