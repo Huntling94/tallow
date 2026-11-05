@@ -69,7 +69,7 @@ A command could not be carried out. Nothing changed.
 | `command` | string | The command as given | 0040 |
 | `defence` | string | The defence as given | 0040 |
 | `segment` | string | The segment as given | 0040 |
-| `reason` | string | `unknown_command`, `unknown_defence`, `unknown_segment`, `segment_taken` or `not_enough_money` | 0040 |
+| `reason` | string | `unknown_command`, `unknown_defence`, `unknown_segment`, `segment_closed`, `segment_taken` or `not_enough_money` | 0040, 0054 |
 
 ## `herd_arrived`
 

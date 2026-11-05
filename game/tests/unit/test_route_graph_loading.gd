@@ -19,6 +19,23 @@ func test_every_grey_box_route_has_at_least_a_quarter_of_the_odds() -> void:
 		assert_int(share).is_greater_equal(250000)
 
 
+func test_a_closed_flag_that_is_not_true_or_false_names_its_segment() -> void:
+	var segment := {"id": "neck", "from": "a", "to": "b", "length_m": 100, "closed": "yes"}
+	var route := {"id": "only", "name": "Only", "segments": ["neck"]}
+	var data := {"id": "bad", "entry": "a", "gate": "b", "segments": [segment], "routes": [route]}
+	var errors := GameData.parse_valley(data).errors()
+	assert_int(errors.size()).is_equal(1)
+	assert_str(errors[0]).contains("neck").contains("closed")
+
+
+func test_a_segment_is_open_unless_the_valley_says_otherwise() -> void:
+	var graph := GameData.load_valley("braided")
+	assert_bool(graph.is_closed("neck_pass")).is_true()
+	assert_bool(graph.is_closed("town_approach")).is_true()
+	assert_bool(graph.is_closed("saddle")).is_false()
+	assert_bool(GameData.load_valley("grey_box").is_closed("neck_pass")).is_false()
+
+
 func test_the_steady_herd_loads_its_weights_and_sizes() -> void:
 	var herd := GameData.load_herd("steady")
 	assert_object(herd).is_not_null()
@@ -53,14 +70,16 @@ func test_the_defences_and_run_rules_load() -> void:
 	assert_array(setup.defences.keys()).contains_exactly_in_any_order(
 		["fence", "pit", "harpoon_tower"]
 	)
-	assert_int(setup.rules.start_money).is_equal(600)
+	assert_int(setup.rules.start_money).is_equal(300)
+	assert_int(setup.defences["pit"].capacity).is_equal(2)
+	assert_int(setup.defences["harpoon_tower"].capacity).is_equal(8)
 	assert_int(setup.rules.goods_per_beast).is_equal(4)
 	assert_int(setup.rules.price_per_good).is_equal(5)
 
 
 func test_the_demo_plan_loads_by_season() -> void:
 	var plan := GameData.load_plan("demo")
-	assert_array(plan.keys()).contains_exactly_in_any_order([1, 2])
+	assert_array(plan.keys()).contains_exactly([1])
 	assert_str(plan[1][0]["defence"]).is_equal("fence")
 
 

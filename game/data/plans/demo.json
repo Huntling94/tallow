@@ -3,10 +3,8 @@
   "seasons": {
     "1": [
       {"command": "build", "defence": "fence", "segment": "ford_crossing"},
-      {"command": "build", "defence": "harpoon_tower", "segment": "cairn_west"}
-    ],
-    "2": [
-      {"command": "build", "defence": "pit", "segment": "neck_pass"}
+      {"command": "build", "defence": "harpoon_tower", "segment": "cairn_west"},
+      {"command": "build", "defence": "pit", "segment": "ridge_drop"}
     ]
   }
 }

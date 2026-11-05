@@ -74,6 +74,9 @@ static func parse_valley(data: Variant) -> RouteGraph:
 		str(valley.get("id", "")), str(valley.get("entry", "")), str(valley.get("gate", ""))
 	)
 	for segment: Dictionary in valley.get("segments", []):
+		var closed: Variant = segment.get("closed", false)
+		if not closed is bool:
+			graph.add_problem("%s: closed must be true or false" % str(segment.get("id", "")))
 		(
 			graph
 			. add_segment(
@@ -82,6 +85,7 @@ static func parse_valley(data: Variant) -> RouteGraph:
 				str(segment.get("to", "")),
 				int(segment.get("length_m", 0)),
 				float(segment.get("roughness", 0.0)),
+				closed is bool and closed,
 			)
 		)
 	for route: Dictionary in valley.get("routes", []):

@@ -205,7 +205,7 @@ func test_defences_carry_over_from_earlier_seasons_and_rejections_draw_nothing()
 func test_the_demo_plan_shows_all_three_defences_in_season_three() -> void:
 	var replay := SeasonReplay.new(_setup(), _demo_events(), 3)
 	assert_dict(replay.frame(0.0)["defences"]).is_equal(
-		{"ford_crossing": "fence", "cairn_west": "harpoon_tower", "neck_pass": "pit"}
+		{"ford_crossing": "fence", "cairn_west": "harpoon_tower", "ridge_drop": "pit"}
 	)
 
 

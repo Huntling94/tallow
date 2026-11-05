@@ -9,6 +9,10 @@ func _layout() -> ValleyLayout:
 	return ValleyLayout.new(GameData.load_valley("grey_box"))
 
 
+func _braided() -> ValleyLayout:
+	return ValleyLayout.new(GameData.load_valley("braided"))
+
+
 func test_every_segment_on_every_route_has_a_path() -> void:
 	assert_array(Array(_layout().missing_segments())).is_empty()
 
@@ -35,11 +39,59 @@ func test_each_route_joins_end_to_end_from_the_neck_to_the_gate() -> void:
 		assert_float(at.distance_to(gate)).is_less(JOIN_TOLERANCE)
 
 
+func test_each_valley_draws_only_its_own_segments() -> void:
+	assert_array(Array(_layout().drawn_segments())).not_contains(["saddle", "spur"])
+	assert_array(Array(_braided().drawn_segments())).contains(["saddle", "spur"])
+
+
+func test_every_braided_route_has_a_path_joined_end_to_end() -> void:
+	var graph := GameData.load_valley("braided")
+	var layout := ValleyLayout.new(graph)
+	assert_array(Array(layout.missing_segments())).is_empty()
+	var gate: Vector2 = ValleyLayout.PATHS["town_approach"][-1]
+	for route_id: String in graph.route_ids:
+		var at: Vector2 = ValleyLayout.PATHS["neck_pass"][0]
+		for segment_id: String in graph.route_segments(route_id):
+			assert_float(layout.point_at(segment_id, 0.0).distance_to(at)).is_less(JOIN_TOLERANCE)
+			at = layout.point_at(segment_id, 1.0)
+		assert_float(at.distance_to(gate)).is_less(JOIN_TOLERANCE)
+
+
+func test_five_routes_have_five_colours() -> void:
+	var graph := GameData.load_valley("braided")
+	var layout := ValleyLayout.new(graph)
+	var colours := []
+	for route_id: String in graph.route_ids:
+		var colour := layout.route_color(route_id)
+		assert_array(colours).not_contains([colour])
+		colours.append(colour)
+
+
+func test_a_segment_two_routes_share_shows_both_colours() -> void:
+	var layout := _braided()
+	var colours := layout.segment_colors("ridge_drop")
+	assert_array(colours).is_equal(
+		[layout.route_color("the_saddle"), layout.route_color("split_ridge")]
+	)
+	assert_int(layout.segment_colors("saddle").size()).is_equal(1)
+	assert_array(layout.segment_colors("neck_pass")).is_equal([ValleyLayout.SHARED_COLOR])
+
+
+func test_the_share_through_a_segment_adds_up_its_routes() -> void:
+	var layout := _braided()
+	var routes := [
+		{"route": "the_saddle", "p_ppm": 100000},
+		{"route": "split_ridge", "p_ppm": 250000},
+		{"route": "low_ford", "p_ppm": 650000},
+	]
+	assert_int(layout.herd_share_ppm("ridge_drop", routes)).is_equal(350000)
+	assert_int(layout.herd_share_ppm("ford_bank", routes)).is_equal(650000)
+	assert_int(layout.herd_share_ppm("neck_pass", routes)).is_equal(1000000)
+
+
 func test_a_point_on_a_line_finds_that_segment() -> void:
-	var layout := _layout()
-	var graph := GameData.load_valley("grey_box")
+	var layout := _braided()
 	for segment_id: String in ValleyLayout.PATHS:
-		assert_bool(graph.has_segment(segment_id)).is_true()
 		var middle := layout.point_at(segment_id, 0.5)
 		assert_str(layout.segment_at(middle, 12.0)).is_equal(segment_id)
 

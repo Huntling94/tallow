@@ -7,7 +7,7 @@ extends Control
 ## simulation.
 
 const VALLEY_SCENE := "res://scenes/valley.tscn"
-const VALLEY_ID := "grey_box"
+const VALLEY_ID := "braided"
 const HERD_ID := "steady"
 const SEASONS := 5
 const DEFAULT_SEED := 42
@@ -15,11 +15,14 @@ const MAX_SEED := 2147483647
 const TICKS_PER_SECOND := 2.0
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
 const BAR_HEIGHT := 12.0
+const ODDS_LABEL_WIDTH := 190.0
 const DEFENCE_TEXT_SIZE := 13
 const HINT_START := "Rings mark open segments. Click this season's defence to take it back."
 const HINT_PICK_FIRST := "Pick a defence first."
 const HINT_STANDING := "That defence stood through a night, so it stays."
+const HINT_CLOSED := "This ground cannot be built on."
 const REASONS := {
+	"segment_closed": HINT_CLOSED,
 	"segment_taken": "That segment already has a defence.",
 	"not_enough_money": "Not enough money for that defence.",
 }
@@ -129,12 +132,17 @@ func press_segment(segment_id: String) -> void:
 	if _draft.remove(segment_id):
 		_hint.text = "Taken back."
 	elif _picked == "":
-		var taken := _draft.defences().has(segment_id)
-		_hint.text = HINT_STANDING if taken else HINT_PICK_FIRST
+		_hint.text = _unpicked_hint(segment_id)
 	else:
 		var reason := _draft.place(_picked, segment_id)
 		_hint.text = REASONS.get(reason, reason)
 	_refresh()
+
+
+func _unpicked_hint(segment_id: String) -> String:
+	if _setup.graph.is_closed(segment_id):
+		return HINT_CLOSED
+	return HINT_STANDING if _draft.defences().has(segment_id) else HINT_PICK_FIRST
 
 
 ## Commits the choices. The season is played here, and only shown after this.
@@ -280,12 +288,6 @@ func _totals_text(frame: Dictionary) -> String:
 	lines.append("Herd  %d" % _replay.herd_size)
 	lines.append("Killed  %d" % frame["killed"])
 	lines.append("Breached  %d" % frame["breached"])
-	var bands: PackedStringArray = []
-	for option: Dictionary in _replay.routes:
-		var route_id: String = option["route"]
-		var short_name := _setup.graph.route_name(route_id).get_slice(" ", 0)
-		bands.append("%s %d" % [short_name, _replay.bands_on_route(route_id)])
-	lines.append("Bands  %s" % " · ".join(bands))
 	return "\n".join(lines)
 
 
@@ -294,9 +296,11 @@ func _show_odds(routes: Array) -> void:
 		var route_id: String = option["route"]
 		var percent: float = option["p_ppm"] / 10000.0
 		(_odds_bars[route_id] as ProgressBar).value = percent
-		(_odds_labels[route_id] as Label).text = (
-			"%s  %.0f%%" % [_setup.graph.route_name(route_id), percent]
-		)
+		var text := "%s  %.0f%%" % [_setup.graph.route_name(route_id), percent]
+		if not is_preparing():
+			var bands := _replay.bands_on_route(route_id)
+			text += " · %d band%s" % [bands, "" if bands == 1 else "s"]
+		(_odds_labels[route_id] as Label).text = text
 
 
 func _show_problem(text: String) -> void:
@@ -363,18 +367,24 @@ static func _defence_text(defence: DefenceType) -> String:
 
 
 func _add_odds_row(odds: VBoxContainer, route_id: String) -> void:
+	var row := HBoxContainer.new()
+	odds.add_child(row)
 	var label := Label.new()
-	odds.add_child(label)
+	label.custom_minimum_size.x = ODDS_LABEL_WIDTH
+	label.add_theme_font_size_override("font_size", DEFENCE_TEXT_SIZE)
+	row.add_child(label)
 	var bar := ProgressBar.new()
 	bar.show_percentage = false
 	bar.custom_minimum_size.y = BAR_HEIGHT
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = _layout.route_color(route_id)
 	var track := StyleBoxFlat.new()
 	track.bg_color = ValleyLayout.TERRAIN_COLOR
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", track)
-	odds.add_child(bar)
+	row.add_child(bar)
 	_odds_bars[route_id] = bar
 	_odds_labels[route_id] = label
 

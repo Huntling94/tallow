@@ -13,13 +13,15 @@ func _init(starting_money: int) -> void:
 
 
 ## Builds a defence if it can. Returns "" on success, or the reason it was
-## rejected: unknown_defence, unknown_segment, segment_taken or
-## not_enough_money. A rejected build changes nothing.
+## rejected: unknown_defence, unknown_segment, segment_closed, segment_taken
+## or not_enough_money. A rejected build changes nothing.
 func build(setup: RunSetup, defence_id: String, segment_id: String) -> String:
 	if not setup.defences.has(defence_id):
 		return "unknown_defence"
 	if not setup.graph.has_segment(segment_id):
 		return "unknown_segment"
+	if setup.graph.is_closed(segment_id):
+		return "segment_closed"
 	if defences.has(segment_id):
 		return "segment_taken"
 	var defence: DefenceType = setup.defences[defence_id]

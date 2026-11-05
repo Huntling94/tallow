@@ -11,8 +11,9 @@ var gate: String
 ## Route ids in the order the valley file lists them; telemetry keeps this order.
 var route_ids: PackedStringArray = []
 
-var _segments := {}  # segment id -> {from, to, length_m, rough_m}
+var _segments := {}  # segment id -> {from, to, length_m, rough_m, closed}
 var _routes := {}  # route id -> {name, segments}
+var _problems: PackedStringArray = []  # bad file values found while loading
 
 
 func _init(valley_id: String, entry_point: String, gate_point: String) -> void:
@@ -22,15 +23,22 @@ func _init(valley_id: String, entry_point: String, gate_point: String) -> void:
 
 
 ## Adds a segment. Rough metres are length × roughness, rounded to whole
-## metres so they are exact on every platform.
+## metres so they are exact on every platform. A closed segment is walked like
+## any other, but nothing can be built on it (spec 0054).
 func add_segment(
-	segment_id: String, from: String, to: String, length_m: int, roughness: float
+	segment_id: String,
+	from: String,
+	to: String,
+	length_m: int,
+	roughness: float,
+	closed: bool = false
 ) -> void:
 	_segments[segment_id] = {
 		"from": from,
 		"to": to,
 		"length_m": length_m,
 		"rough_m": roundi(length_m * roughness),
+		"closed": closed,
 	}
 
 
@@ -56,6 +64,16 @@ func segment_length(segment_id: String) -> int:
 	return _segments[segment_id]["length_m"]
 
 
+## True when the valley refuses building on this segment.
+func is_closed(segment_id: String) -> bool:
+	return _segments[segment_id]["closed"]
+
+
+## Records a bad value from the valley file, reported by errors().
+func add_problem(problem: String) -> void:
+	_problems.append(problem)
+
+
 ## Total length, rough metres and threat over the route's segments. Threat
 ## comes from the defences standing on them (segment id -> threat units).
 func features(route_id: String, threat_by_segment: Dictionary = {}) -> Dictionary:
@@ -68,10 +86,11 @@ func features(route_id: String, threat_by_segment: Dictionary = {}) -> Dictionar
 	return totals
 
 
-## Problems that make the graph unusable, one line each, naming the route.
+## Problems that make the graph unusable, one line each, naming the route or
+## segment.
 ## Empty when every route is a connected chain from the entry to the gate.
 func errors() -> PackedStringArray:
-	var found: PackedStringArray = []
+	var found := _problems.duplicate()
 	if route_ids.is_empty():
 		found.append("%s: no routes" % id)
 	for route_id: String in route_ids:

@@ -1,20 +1,24 @@
 extends GdUnitTestSuite
-## Spec 0040, AC5 and AC7, and spec 0044, AC4: over many seeds and plans,
-## beasts and money always add up, and events keep their order.
+## Spec 0040, AC5 and AC7, spec 0044, AC4, and spec 0054: over many seeds,
+## plans and both valleys, beasts and money always add up, and events keep
+## their order.
 
 const SEEDS := 60
 const SEASONS := 5
+const RICH_MONEY := 2000
 
-var _setup: RunSetup
-var _plans: Array[Dictionary] = []
+var _cases: Array[Array] = []  # [setup, plan]
+var _later_builds: Array = []  # [setup, plan]
 
 
 func before() -> void:
-	_setup = GameData.load_setup("grey_box", "steady")
-	_plans = [
-		{},
-		GameData.load_plan("demo"),
-		GameData.load_plan("chokepoints"),
+	var grey := GameData.load_setup("grey_box", "steady")
+	var braided := GameData.load_setup("braided", "steady")
+	# Rich enough that the later builds are applied on every seed.
+	var rich := GameData.load_setup("grey_box", "steady")
+	rich.rules.start_money = RICH_MONEY
+	_later_builds = [
+		rich,
 		{
 			1:
 			[
@@ -25,15 +29,29 @@ func before() -> void:
 			3: [_build("harpoon_tower", "town_approach"), _build("pit", "ford_bank")],
 		},
 	]
+	var demo := GameData.load_plan("demo")
+	var closed := {
+		1: [_build("harpoon_tower", "neck_pass"), _build("pit", "ridge_drop")],
+		2: [_build("fence", "saddle")],
+	}
+	_cases = [
+		[grey, {}],
+		[grey, demo],
+		[grey, GameData.load_plan("chokepoints")],
+		_later_builds,
+		[braided, {}],
+		[braided, demo],
+		[braided, closed],
+	]
 
 
 func test_every_band_is_either_killed_or_breaches() -> void:
-	for plan: Dictionary in _plans:
+	for case: Array in _cases:
 		for run_seed: int in range(1, SEEDS + 1):
 			var killed := {}
 			var breached := {}
 			var sizes := {}
-			for event: Dictionary in _run(run_seed, plan):
+			for event: Dictionary in _run(case, run_seed):
 				var key := "%d/%d" % [event["season"], event.get("band", 0)]
 				match event["type"]:
 					"route_chosen":
@@ -47,13 +65,14 @@ func test_every_band_is_either_killed_or_breaches() -> void:
 
 
 func test_money_follows_the_levy_costs_breaches_and_harvest() -> void:
-	for plan: Dictionary in _plans:
+	for case: Array in _cases:
+		var setup: RunSetup = case[0]
 		for run_seed: int in range(1, SEEDS + 1):
-			var money := _setup.rules.start_money
-			for event: Dictionary in _run(run_seed, plan):
+			var money := setup.rules.start_money
+			for event: Dictionary in _run(case, run_seed):
 				match event["type"]:
 					"season_started":
-						money += _setup.rules.season_levy
+						money += setup.rules.season_levy
 						assert_int(event["money"]).is_equal(money)
 					"command_applied":
 						money -= event["cost"]
@@ -72,7 +91,7 @@ func test_season_totals_match_the_night() -> void:
 	for run_seed: int in range(1, SEEDS + 1):
 		var killed := 0
 		var breached := 0
-		for event: Dictionary in _run(run_seed, _plans[3]):
+		for event: Dictionary in _run(_later_builds, run_seed):
 			match event["type"]:
 				"beast_killed":
 					killed += 1
@@ -97,7 +116,7 @@ func test_events_keep_their_order_and_phases() -> void:
 		"route_chosen",
 	]
 	for run_seed: int in range(1, 11):
-		var events := _run(run_seed, _plans[1])
+		var events := _run([_cases[5][0], _cases[5][1]], run_seed)
 		for index: int in events.size():
 			var event := events[index]
 			if event["type"] in PREPARE:
@@ -109,8 +128,24 @@ func test_events_keep_their_order_and_phases() -> void:
 				assert_bool(before_key < _key(event)).is_true()
 
 
-func _run(run_seed: int, plan: Dictionary) -> Array[Dictionary]:
-	return SeasonRun.new(_setup, RandomStreams.new(run_seed)).run(SEASONS, plan)
+func test_builds_in_a_later_season_are_applied_on_every_seed() -> void:
+	for run_seed: int in range(1, SEEDS + 1):
+		var applied := _run(_later_builds, run_seed).filter(
+			func(e: Dictionary) -> bool: return e["type"] == "command_applied" and e["season"] == 3
+		)
+		assert_int(applied.size()).is_equal(2)
+
+
+func test_a_build_on_closed_ground_is_rejected_on_every_seed() -> void:
+	for run_seed: int in range(1, SEEDS + 1):
+		var rejected := _run(_cases[6], run_seed).filter(
+			func(e: Dictionary) -> bool: return e["type"] == "command_rejected"
+		)
+		assert_str(rejected[0]["reason"]).is_equal("segment_closed")
+
+
+func _run(case: Array, run_seed: int) -> Array[Dictionary]:
+	return SeasonRun.new(case[0], RandomStreams.new(run_seed)).run(SEASONS, case[1])
 
 
 func _key(event: Dictionary) -> Array:

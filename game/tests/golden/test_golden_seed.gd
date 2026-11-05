@@ -10,18 +10,27 @@ const BANDS_42: Array[int] = [4, 6, 5, 3, 6]
 const ROUTES_42: Array[String] = ["cairn_pass", "low_ford", "low_ford", "low_ford", "cairn_pass"]
 
 ## Spec 0040: seed 42 with the demo plan over 5 seasons.
+## Spec 0054 moved the plan's pit to ridge_drop in season 1, and changed the
+## start money and capacities, so these values changed with it.
 const DEMO_ROUTES_42: Array[String] = [
-	"cairn_pass", "split_ridge", "split_ridge", "split_ridge", "split_ridge"
+	"cairn_pass", "split_ridge", "split_ridge", "split_ridge", "cairn_pass"
 ]
-const DEMO_KILLED_42 := 2
-const DEMO_BREACHED_42 := 22
-## Spec 0044: start 600, no levy, a kill earns 20. Routes, kills and breaches
-## above are unchanged from spec 0040; only money moved.
-const DEMO_HARVEST_BEASTS_42 := 2
-const DEMO_HARVEST_GOODS_42 := 8
-const DEMO_HARVEST_INCOME_42 := 40
-const DEMO_HARVEST_MONEY_42 := 260
-const DEMO_FINAL_MONEY_42 := -390
+const DEMO_KILLED_42 := 5
+const DEMO_BREACHED_42 := 19
+## Spec 0044: no levy, a kill earns 20.
+const DEMO_HARVEST_BEASTS_42 := 5
+const DEMO_HARVEST_GOODS_42 := 20
+const DEMO_HARVEST_INCOME_42 := 100
+const DEMO_HARVEST_MONEY_42 := -30
+const DEMO_FINAL_MONEY_42 := -540
+## Spec 0054: seed 42's first season on the played valley, no defences.
+const BRAIDED_HERD_42 := 24
+const BRAIDED_DEMO_KILLED_42 := 4
+const BRAIDED_DEMO_BREACHED_42 := 20
+const BRAIDED_DEMO_FINAL_MONEY_42 := -870
+const BRAIDED_ROUTES_42: Array[String] = [
+	"cairn_pass", "the_spur", "low_ford", "low_ford", "the_saddle"
+]
 
 var _setup: RunSetup
 
@@ -62,6 +71,29 @@ func test_seed_42_with_the_demo_plan() -> void:
 	assert_int(first_harvest.get("income", -1)).is_equal(DEMO_HARVEST_INCOME_42)
 	assert_int(first_harvest.get("money", -1)).is_equal(DEMO_HARVEST_MONEY_42)
 	assert_int(run.state.money).is_equal(DEMO_FINAL_MONEY_42)
+
+
+func test_seed_42_first_season_on_the_braided_valley() -> void:
+	var setup := GameData.load_setup("braided", "steady")
+	var events := SeasonRun.new(setup, RandomStreams.new(42)).run(1, {})
+	var arrival: Dictionary = events.filter(_of_type("herd_arrived"))[0]
+	var choices := events.filter(_of_type("route_chosen"))
+	assert_int(arrival["herd_size"]).is_equal(BRAIDED_HERD_42)
+	(
+		assert_array(choices.map(func(e: Dictionary) -> String: return e["route"]))
+		. is_equal(BRAIDED_ROUTES_42)
+	)
+
+
+func test_seed_42_with_the_demo_plan_on_the_braided_valley() -> void:
+	var setup := GameData.load_setup("braided", "steady")
+	var run := SeasonRun.new(setup, RandomStreams.new(42))
+	var events := run.run(5, GameData.load_plan("demo"))
+	var first_end: Dictionary = events.filter(_of_type("season_ended"))[0]
+	assert_int(events.filter(_of_type("command_applied")).size()).is_equal(3)
+	assert_int(first_end["killed"]).is_equal(BRAIDED_DEMO_KILLED_42)
+	assert_int(first_end["breached"]).is_equal(BRAIDED_DEMO_BREACHED_42)
+	assert_int(run.state.money).is_equal(BRAIDED_DEMO_FINAL_MONEY_42)
 
 
 func test_the_demo_plan_repeats_exactly() -> void:

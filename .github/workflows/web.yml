@@ -58,7 +58,7 @@ jobs:
           test -s build/web/index.html && test -s build/web/index.pck && test -s build/web/index.wasm
           # JSON is not a Godot resource, so it ships only through the preset's
           # include filter. The season viewer cannot run without it.
-          grep -qa 'data/valleys/grey_box.json' build/web/index.pck
+          grep -qa 'data/valleys/braided.json' build/web/index.pck
 
       - name: Upload the build
         if: github.event_name == 'pull_request'

@@ -15,8 +15,10 @@ const PATHS := {
 	"neck_pass": [Vector2(300, 30), Vector2(300, 92)],
 	"cairn_west": [Vector2(300, 92), Vector2(210, 128), Vector2(128, 205)],
 	"cairn_south": [Vector2(128, 205), Vector2(118, 286), Vector2(190, 350), Vector2(300, 372)],
+	"saddle": [Vector2(128, 205), Vector2(205, 234), Vector2(282, 228)],
 	"ridge_climb": [Vector2(300, 92), Vector2(318, 160), Vector2(282, 228)],
 	"ridge_drop": [Vector2(282, 228), Vector2(312, 300), Vector2(300, 372)],
+	"spur": [Vector2(282, 228), Vector2(365, 268), Vector2(452, 300)],
 	"ford_bank": [Vector2(300, 92), Vector2(392, 132), Vector2(468, 214)],
 	"ford_crossing": [Vector2(468, 214), Vector2(452, 300)],
 	"ford_flats": [Vector2(452, 300), Vector2(378, 352), Vector2(300, 372)],
@@ -26,7 +28,9 @@ const PATHS := {
 ## Route id -> where its name is drawn, and whether the text ends there.
 const LABELS := {
 	"cairn_pass": {"at": Vector2(106, 240), "right_aligned": true},
-	"split_ridge": {"at": Vector2(322, 232), "right_aligned": false},
+	"the_saddle": {"at": Vector2(172, 198), "right_aligned": false},
+	"split_ridge": {"at": Vector2(304, 165), "right_aligned": true},
+	"the_spur": {"at": Vector2(340, 300), "right_aligned": false},
 	"low_ford": {"at": Vector2(482, 180), "right_aligned": false},
 }
 
@@ -43,7 +47,9 @@ const TERRAIN_COLOR := Color("1e2a31")
 const LAMP_COLOR := Color("f0a23c")
 const DANGER_COLOR := Color("e0715f")
 const SHARED_COLOR := MUTED_COLOR
-const ROUTE_COLORS: Array[Color] = [Color("6fb3d4"), Color("a998dc"), Color("7fc28f")]
+const ROUTE_COLORS: Array[Color] = [
+	Color("6fb3d4"), Color("d894b8"), Color("a998dc"), Color("d9c36a"), Color("7fc28f")
+]
 
 ## How far along its segment a defence stands, in map units. Defences act as
 ## a band enters their segment, so the marker sits just inside the start.
@@ -84,6 +90,44 @@ func is_shared(segment_id: String) -> bool:
 		if not _graph.route_segments(route_id).has(segment_id):
 			return false
 	return true
+
+
+## The segments of the loaded valley that have a path, in drawing order.
+func drawn_segments() -> PackedStringArray:
+	var found: PackedStringArray = []
+	for segment_id: String in PATHS:
+		if _graph.has_segment(segment_id):
+			found.append(segment_id)
+	return found
+
+
+## The routes that use this segment, in the valley's order.
+func routes_through(segment_id: String) -> PackedStringArray:
+	var found: PackedStringArray = []
+	for route_id: String in _graph.route_ids:
+		if _graph.route_segments(route_id).has(segment_id):
+			found.append(route_id)
+	return found
+
+
+## The colours a segment is drawn in: both routes' on a segment two share,
+## otherwise the one from segment_color.
+func segment_colors(segment_id: String) -> Array[Color]:
+	var routes := routes_through(segment_id)
+	if routes.size() == 2 and not is_shared(segment_id):
+		return [route_color(routes[0]), route_color(routes[1])]
+	return [segment_color(segment_id)]
+
+
+## The share of the herd expected through a segment, in parts per million:
+## the odds of every route that uses it. `routes` holds route_options entries.
+func herd_share_ppm(segment_id: String, routes: Array) -> int:
+	var through := routes_through(segment_id)
+	var total := 0
+	for option: Dictionary in routes:
+		if through.has(option["route"]):
+			total += option["p_ppm"]
+	return total
 
 
 ## Shared segments are neutral; the rest take the colour of their first route.

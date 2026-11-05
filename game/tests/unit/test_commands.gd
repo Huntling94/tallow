@@ -30,6 +30,29 @@ func test_a_taken_segment_is_rejected() -> void:
 	_assert_rejected(state, "pit", "ford_bank", "segment_taken")
 
 
+func test_a_closed_segment_is_rejected_and_changes_nothing() -> void:
+	var setup := GameData.load_setup("braided", "steady")
+	var state := RunState.new(400)
+	assert_str(state.build(setup, "pit", "neck_pass")).is_equal("segment_closed")
+	assert_int(state.money).is_equal(400)
+	assert_dict(state.defences).is_empty()
+
+
+func test_a_closed_segment_is_reported_in_the_events() -> void:
+	var setup := GameData.load_setup("braided", "steady")
+	var run := SeasonRun.new(setup, RandomStreams.new(42))
+	var events := run.play_season([_build("fence", "town_approach")])
+	var rejected := events.filter(
+		func(event: Dictionary) -> bool: return event["type"] == "command_rejected"
+	)
+	assert_int(rejected.size()).is_equal(1)
+	assert_str(rejected[0]["reason"]).is_equal("segment_closed")
+
+
+func test_nothing_is_closed_in_a_valley_that_marks_nothing() -> void:
+	assert_str(RunState.new(400).build(_setup, "pit", "neck_pass")).is_empty()
+
+
 func test_too_little_money_is_rejected() -> void:
 	_assert_rejected(RunState.new(79), "pit", "ford_bank", "not_enough_money")
 
@@ -54,7 +77,7 @@ func test_commands_are_reported_in_telemetry() -> void:
 	)
 	assert_int(applied.size()).is_equal(1)
 	assert_int(applied[0]["cost"]).is_equal(80)
-	assert_int(applied[0]["money"]).is_equal(600 + 0 - 80)
+	assert_int(applied[0]["money"]).is_equal(_setup.rules.start_money - 80)
 	assert_int(rejected.size()).is_equal(1)
 	assert_str(rejected[0]["reason"]).is_equal("segment_taken")
 

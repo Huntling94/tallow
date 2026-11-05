@@ -18,7 +18,7 @@ func test_a_run_writes_header_events_and_summary() -> void:
 	var records := _run(42, 3, "a.jsonl")
 	assert_str(records[0]["type"]).is_equal("run_start")
 	assert_int(int(records[0]["seed"])).is_equal(42)
-	assert_str(records[0]["settings"]["valley"]).is_equal("grey_box")
+	assert_str(records[0]["settings"]["valley"]).is_equal("braided")
 	assert_str(records[0]["settings"]["herd_personality"]).is_equal("steady")
 	assert_str(records[-1]["type"]).is_equal("run_end")
 	assert_int(int(records[-1]["seasons"])).is_equal(3)
@@ -140,15 +140,49 @@ func test_a_run_with_the_demo_plan_builds_defences() -> void:
 
 func test_a_run_with_the_chokepoints_plan_writes_harvests_at_schema_1() -> void:
 	var path := OUT.path_join("chokepoints.jsonl")
-	assert_int(HeadlessRun.run(42, 5, path, RulesVersion.RULE_FOLDERS, "chokepoints")).is_equal(OK)
+	var folders := RulesVersion.RULE_FOLDERS
+	assert_int(HeadlessRun.run(42, 5, path, folders, "chokepoints", "grey_box")).is_equal(OK)
 	var harvests := 0
+	var beasts := 0
+	var rejected := 0
 	var lines := FileAccess.get_file_as_string(path).strip_edges().split("\n")
 	for line: String in lines:
 		var record: Dictionary = JSON.parse_string(line)
 		assert_int(int(record["schema_version"])).is_equal(1)
-		if record["type"] == "harvest":
+		if record["type"] == "run_start":
+			assert_str(record["settings"]["valley"]).is_equal("grey_box")
+		elif record["type"] == "harvest":
 			harvests += 1
+			beasts += int(record["beasts"])
+		elif record["type"] == "command_rejected":
+			rejected += 1
 	assert_int(harvests).is_equal(5)
+	assert_int(rejected).is_equal(0)
+	assert_int(beasts).is_greater(0)
+
+
+func test_the_runner_reads_a_valley_and_defaults_to_the_played_one() -> void:
+	var base := PackedStringArray(["--seed", "42", "--out", "a.jsonl"])
+	assert_str(HeadlessRun.parse_args(base)["valley"]).is_equal("braided")
+	var chosen := base + PackedStringArray(["--valley", "grey_box", "--plan", "chokepoints"])
+	var options := HeadlessRun.parse_args(chosen)
+	assert_str(options["valley"]).is_equal("grey_box")
+	assert_str(options["plan"]).is_equal("chokepoints")
+
+
+func test_the_runner_refuses_arguments_it_cannot_use() -> void:
+	assert_dict(HeadlessRun.parse_args(PackedStringArray(["--seed", "x"]))).is_empty()
+	assert_dict(HeadlessRun.parse_args(PackedStringArray(["--seed"]))).is_empty()
+	var unknown := PackedStringArray(["--seed", "1", "--out", "a", "--moon", "b"])
+	assert_dict(HeadlessRun.parse_args(unknown)).is_empty()
+
+
+func test_an_unknown_valley_stops_the_run() -> void:
+	var path := OUT.path_join("no_valley.jsonl")
+	var folders := RulesVersion.RULE_FOLDERS
+	assert_int(HeadlessRun.run(42, 1, path, folders, "", "no_such_valley")).is_equal(
+		ERR_INVALID_DATA
+	)
 
 
 func test_the_run_id_follows_rules_version_seed_and_settings() -> void:
