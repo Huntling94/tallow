@@ -35,6 +35,26 @@ func test_each_route_joins_end_to_end_from_the_neck_to_the_gate() -> void:
 		assert_float(at.distance_to(gate)).is_less(JOIN_TOLERANCE)
 
 
+func test_a_point_on_a_line_finds_that_segment() -> void:
+	var layout := _layout()
+	var graph := GameData.load_valley("grey_box")
+	for segment_id: String in ValleyLayout.PATHS:
+		assert_bool(graph.has_segment(segment_id)).is_true()
+		var middle := layout.point_at(segment_id, 0.5)
+		assert_str(layout.segment_at(middle, 12.0)).is_equal(segment_id)
+
+
+func test_a_point_just_inside_the_tolerance_counts_and_one_outside_does_not() -> void:
+	var layout := _layout()
+	var middle := layout.point_at("neck_pass", 0.5)
+	assert_str(layout.segment_at(middle + Vector2(11.5, 0), 12.0)).is_equal("neck_pass")
+	assert_str(layout.segment_at(middle + Vector2(12.5, 0), 12.0)).is_empty()
+
+
+func test_a_point_far_from_every_line_finds_nothing() -> void:
+	assert_str(_layout().segment_at(Vector2(560, 40), 12.0)).is_empty()
+
+
 func test_shared_segments_are_neutral_and_the_rest_take_their_route_colour() -> void:
 	var graph := GameData.load_valley("grey_box")
 	var layout := ValleyLayout.new(graph)

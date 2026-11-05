@@ -28,6 +28,7 @@ var _walks := {}  # band number -> ticks it enters each segment, then the gate
 var _kills: Array[Dictionary] = []
 var _breaches: Array[Dictionary] = []
 var _money: Array[Dictionary] = []  # {tick, money}, in event order
+var _harvest := {}  # the season's harvest event
 var _log: Array[Dictionary] = []  # {tick, text}, in event order
 
 
@@ -71,10 +72,12 @@ func frame(time: float) -> Dictionary:
 			marks.append(_mark(kill, KILL, time))
 	var breached_bands := {}
 	var breached := 0
+	var breach_costs := 0
 	for breach: Dictionary in _breaches:
 		if breach["tick"] <= time:
 			breached_bands[breach["band"]] = true
 			breached += breach["beasts"]
+			breach_costs += breach["cost"]
 			marks.append(_mark(breach, BREACH, time))
 	var bands: Array[Dictionary] = []
 	for band: Dictionary in _bands:
@@ -86,12 +89,16 @@ func frame(time: float) -> Dictionary:
 	return {
 		"bands": bands,
 		"breach_note": _breach_note(time),
+		"breach_costs": breach_costs,
 		"breached": breached,
 		"defences": _defences,
+		"income": _income_at(time),
 		"killed": killed,
 		"log": log_lines,
 		"marks": marks,
 		"money": _money_at(time),
+		"new_defences": {},
+		"routes": routes,
 	}
 
 
@@ -125,6 +132,10 @@ func _read(event: Dictionary) -> void:
 			_breaches.append(event)
 			_money.append({"tick": tick, "money": event["money"]})
 			text = "Band %d: %d breach, cost %d" % [event["band"], event["beasts"], event["cost"]]
+		"harvest":
+			_harvest = event
+			_money.append({"tick": tick, "money": event["money"]})
+			text = "Sold %d goods for %d" % [event["goods"], event["income"]]
 		"season_ended":
 			last_tick = tick
 			_money.append({"tick": tick, "money": event["money"]})
@@ -173,6 +184,12 @@ func _breach_note(time: float) -> Dictionary:
 			note = {"age": age, "beasts": 0}
 		note["beasts"] += breach["beasts"]
 	return note
+
+
+func _income_at(time: float) -> int:
+	if _harvest.is_empty() or _harvest["tick"] > time:
+		return 0
+	return _harvest["income"]
 
 
 func _money_at(time: float) -> int:

@@ -65,6 +65,6 @@ offset_top = 44.0
 offset_right = 136.0
 offset_bottom = 75.0
 focus_mode = 0
-text = "Season viewer"
+text = "Play a run"
 
 [connection signal="pressed" from="ViewerButton" to="." method="open_viewer"]

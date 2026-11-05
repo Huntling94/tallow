@@ -68,7 +68,27 @@ autowrap_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="RunRow" type="HBoxContainer" parent="Margin/Columns/Panel"]
+layout_mode = 2
+
+[node name="SeedLabel" type="Label" parent="Margin/Columns/Panel/RunRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.603922, 0.647059, 0.639216, 1)
+text = "Seed"
+
+[node name="Seed" type="SpinBox" parent="Margin/Columns/Panel/RunRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NewRun" type="Button" parent="Margin/Columns/Panel/RunRow"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "New run"
+
 [node name="Controls" type="HBoxContainer" parent="Margin/Columns/Panel"]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Play" type="Button" parent="Margin/Columns/Panel/Controls"]
@@ -82,22 +102,12 @@ text = "Pause"
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
-text = "Restart"
+text = "Watch again"
 
 [node name="Speed" type="OptionButton" parent="Margin/Columns/Panel/Controls"]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
-
-[node name="SeedLabel" type="Label" parent="Margin/Columns/Panel/Controls"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.603922, 0.647059, 0.639216, 1)
-text = "Seed"
-
-[node name="Seed" type="SpinBox" parent="Margin/Columns/Panel/Controls"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
 
 [node name="Slider" type="HSlider" parent="Margin/Columns/Panel"]
 unique_name_in_owner = true
@@ -120,13 +130,64 @@ theme_override_constants/separation = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="Prepare" type="VBoxContainer" parent="Margin/Columns/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="DefenceHeading" type="Label" parent="Margin/Columns/Panel/Prepare"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.603922, 0.647059, 0.639216, 1)
+theme_override_font_sizes/font_size = 12
+text = "PICK A DEFENCE, THEN CLICK A ROUTE"
+
+[node name="Defences" type="VBoxContainer" parent="Margin/Columns/Panel/Prepare"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Hint" type="Label" parent="Margin/Columns/Panel/Prepare"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.603922, 0.647059, 0.639216, 1)
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 2
+
+[node name="Release" type="Button" parent="Margin/Columns/Panel/Prepare"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.941176, 0.635294, 0.235294, 1)
+text = "Release the herd"
+
+[node name="Result" type="VBoxContainer" parent="Margin/Columns/Panel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ResultText" type="Label" parent="Margin/Columns/Panel/Result"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.941176, 0.635294, 0.235294, 1)
+autowrap_mode = 2
+
+[node name="NextSeason" type="Button" parent="Margin/Columns/Panel/Result"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+
 [node name="LogHeading" type="Label" parent="Margin/Columns/Panel"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.603922, 0.647059, 0.639216, 1)
 theme_override_font_sizes/font_size = 12
 text = "SO FAR"
 
 [node name="LogBox" type="Control" parent="Margin/Columns/Panel"]
+unique_name_in_owner = true
 clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3

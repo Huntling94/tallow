@@ -102,6 +102,25 @@ func point_at(segment_id: String, share: float) -> Vector2:
 	return _along(points, _length(points) * clampf(share, 0.0, 1.0))["position"]
 
 
+## The valley segment whose line is nearest this point on the sheet, within
+## `tolerance` map units, or "" if none is that close.
+func segment_at(point: Vector2, tolerance: float) -> String:
+	var nearest := ""
+	var best := tolerance
+	for segment_id: String in PATHS:
+		if not _graph.has_segment(segment_id):
+			continue
+		var points: Array = PATHS[segment_id]
+		for index: int in range(1, points.size()):
+			var closest := Geometry2D.get_closest_point_to_segment(
+				point, points[index - 1], points[index]
+			)
+			if point.distance_to(closest) <= best:
+				best = point.distance_to(closest)
+				nearest = segment_id
+	return nearest
+
+
 ## Where a defence on this segment is drawn.
 func defence_spot(segment_id: String) -> Vector2:
 	var points: Array = PATHS[segment_id]
