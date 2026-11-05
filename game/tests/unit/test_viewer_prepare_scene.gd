@@ -63,6 +63,19 @@ func _click(viewer: SeasonViewer, segment_id: String, map_size := Vector2(600, 4
 	map._gui_input(click)
 
 
+func _frame(viewer: SeasonViewer) -> Dictionary:
+	return (viewer.get_node("%Map") as RouteMap)._frame
+
+
+## The odds each route should show, as the panel writes them.
+func _expected_odds(viewer: SeasonViewer, draft: DefenceDraft) -> void:
+	var setup := _setup()
+	var text := _odds_text(viewer)
+	for option: Dictionary in draft.odds():
+		var percent: float = option["p_ppm"] / 10000.0
+		assert_str(text).contains("%s  %.0f%%" % [setup.graph.route_name(option["route"]), percent])
+
+
 func _odds_text(viewer: SeasonViewer) -> String:
 	var parts: PackedStringArray = []
 	for child: Node in viewer.get_node("%Odds").get_children():
@@ -82,7 +95,8 @@ func test_it_opens_on_the_prepare_phase_of_season_1() -> void:
 	var setup := _setup()
 	assert_str(_text(viewer, "%Totals")).contains("Money  %d" % setup.rules.start_money)
 	assert_str(_text(viewer, "%Totals")).contains("18 to 30")
-	assert_str(_odds_text(viewer)).contains("Cairn Pass").contains("%")
+	_expected_odds(viewer, DefenceDraft.new(setup, RunState.new(setup.rules.start_money)))
+	assert_array(_frame(viewer)["bands"]).is_empty()
 
 
 func test_each_defence_button_gives_its_numbers() -> void:
@@ -98,10 +112,13 @@ func test_each_defence_button_gives_its_numbers() -> void:
 func test_clicking_a_route_places_the_picked_defence() -> void:
 	var viewer := _viewer()
 	var odds := _odds_text(viewer)
+	var map_odds := str(_frame(viewer)["routes"])
 	_defence_button(viewer, 0).pressed.emit()
 	_click(viewer, FORD)
 	assert_str(_text(viewer, "%Totals")).contains("Money  560")
 	assert_str(_odds_text(viewer)).is_not_equal(odds)
+	assert_str(_frame(viewer)["defences"].get(FORD, "")).is_equal("fence")
+	assert_str(str(_frame(viewer)["routes"])).is_not_equal(map_odds)
 
 
 func test_a_click_lands_on_the_right_segment_at_any_window_size() -> void:
@@ -109,7 +126,33 @@ func test_a_click_lands_on_the_right_segment_at_any_window_size() -> void:
 		var viewer := _viewer()
 		viewer.pick_defence("fence")
 		_click(viewer, CAIRN, map_size)
-		assert_str(_text(viewer, "%Totals")).contains("Money  560")
+		assert_array(_frame(viewer)["defences"].keys()).contains_exactly([CAIRN])
+		_click(viewer, FORD, map_size)
+		assert_array(_frame(viewer)["defences"].keys()).contains_exactly([CAIRN, FORD])
+
+
+func test_each_defence_button_has_room_for_all_of_its_text() -> void:
+	var viewer := _viewer()
+	var room := (viewer.get_node("%Panel") as Control).custom_minimum_size.x
+	for index: int in 3:
+		var button := _defence_button(viewer, index)
+		var size := button.get_theme_font_size("font_size")
+		var font := button.get_theme_font("font")
+		var width := font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		var edges := button.get_theme_stylebox("normal").get_minimum_size().x
+		assert_float(width + edges).is_less_equal(room)
+
+
+func test_the_hover_mark_goes_when_the_mouse_leaves_the_map() -> void:
+	var viewer := _viewer()
+	var map := viewer.get_node("%Map") as RouteMap
+	map.size = Vector2(600, 440)
+	var motion := InputEventMouseMotion.new()
+	motion.position = ValleyLayout.new(_setup().graph).point_at(FORD, 0.5)
+	map._gui_input(motion)
+	assert_str(map._hover).is_equal(FORD)
+	map.notification(Control.NOTIFICATION_MOUSE_EXIT)
+	assert_str(map._hover).is_empty()
 
 
 func test_a_click_away_from_every_route_does_nothing() -> void:
@@ -217,7 +260,14 @@ func test_the_end_of_a_night_shows_the_result_and_leads_on() -> void:
 	var result := _text(viewer, "%ResultText")
 	assert_str(result).contains("%d killed" % ended["killed"])
 	assert_str(result).contains("%d breached" % ended["breached"])
-	assert_str(result).contains("Income").contains("breach costs")
+	var costs := 0
+	var income := 0
+	for event: Dictionary in viewer.events():
+		if event["type"] == "breach":
+			costs += event["cost"]
+		elif event["type"] == "harvest":
+			income = event["income"]
+	assert_str(result).contains("Income %d" % income).contains("breach costs %d" % costs)
 	assert_str(result).contains("Money %d" % ended["money"])
 	var next := viewer.get_node("%NextSeason") as Button
 	assert_str(next.text).is_equal("Prepare season 2")
@@ -234,32 +284,23 @@ func test_a_new_prepare_phase_carries_over_money_and_defences() -> void:
 	var ended: Dictionary = viewer.events()[-1]
 	viewer.show_season(2)
 	assert_str(_text(viewer, "%Totals")).contains("Money  %d" % ended["money"])
-	assert_str(_odds_text(viewer)).contains("Low Ford")
-	assert_bool(viewer.get_node("%Map")._frame["defences"].has(FORD)).is_true()
+	var setup := _setup()
+	var run := SeasonRun.new(setup, RandomStreams.new(42))
+	var command := {"command": "build", "defence": "fence", "segment": FORD}
+	run.play_season([command])
+	_expected_odds(viewer, DefenceDraft.new(setup, run.state))
+	assert_bool(_frame(viewer)["defences"].has(FORD)).is_true()
 
 
-func test_season_5_ends_the_run() -> void:
+func test_a_standing_defence_clicked_with_nothing_picked_says_it_is_taken() -> void:
 	var viewer := _viewer()
-	for number: int in range(1, SeasonViewer.SEASONS + 1):
-		viewer.show_season(number)
-		viewer.release()
-	viewer.seek(9999.0)
-	assert_str(_text(viewer, "%ResultText")).contains(
-		"Final money %d" % viewer.events()[-1]["money"]
-	)
-	assert_bool(_visible(viewer, "%NextSeason")).is_false()
-	assert_bool(_visible(viewer, "%NewRun")).is_true()
-	viewer.show_season(6)
-	assert_int(viewer.season).is_equal(5)
-	assert_bool(viewer.is_preparing()).is_false()
-
-
-func test_a_season_not_yet_played_cannot_be_picked() -> void:
-	var viewer := _viewer()
-	var third := viewer.get_node("%Seasons").get_child(2) as Button
-	assert_bool(third.disabled).is_true()
-	viewer.show_season(3)
-	assert_int(viewer.season).is_equal(1)
+	viewer.pick_defence("fence")
+	_click(viewer, FORD)
+	viewer.release()
+	viewer.show_season(2)
+	viewer.pick_defence("fence")
+	_click(viewer, FORD)
+	assert_str(_text(viewer, "%Hint")).contains("already")
 
 
 func test_a_played_season_can_be_watched_again_and_keeps_the_placements() -> void:

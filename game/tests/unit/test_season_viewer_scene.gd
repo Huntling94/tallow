@@ -37,12 +37,54 @@ func _direct_run(run_seed: int, seasons: Array) -> Array[Dictionary]:
 	return events
 
 
+func _season_end(viewer: SeasonViewer, number: int) -> Dictionary:
+	for event: Dictionary in viewer.events():
+		if event["type"] == "season_ended" and event["season"] == number:
+			return event
+	return {}
+
+
 func _text(viewer: SeasonViewer, node: String) -> String:
 	return (viewer.get_node(node) as Label).text
 
 
 func _visible(viewer: SeasonViewer, node: String) -> bool:
 	return (viewer.get_node(node) as Control).visible
+
+
+func test_season_5_ends_the_run() -> void:
+	var viewer := _viewer()
+	for number: int in range(1, SeasonViewer.SEASONS + 1):
+		viewer.show_season(number)
+		viewer.release()
+	viewer.seek(9999.0)
+	assert_str(_text(viewer, "%ResultText")).contains(
+		"final money %d" % viewer.events()[-1]["money"]
+	)
+	assert_bool(_visible(viewer, "%NextSeason")).is_false()
+	assert_bool(_visible(viewer, "%NewRun")).is_true()
+	viewer.show_season(6)
+	assert_int(viewer.season).is_equal(5)
+	assert_bool(viewer.is_preparing()).is_false()
+
+
+func test_an_earlier_season_rewatched_after_the_run_shows_its_own_money() -> void:
+	var viewer := _viewer()
+	for number: int in range(1, SeasonViewer.SEASONS + 1):
+		viewer.show_season(number)
+		viewer.release()
+	var first_end: int = _season_end(viewer, 1)["money"]
+	viewer.show_season(1)
+	viewer.seek(9999.0)
+	assert_str(_text(viewer, "%ResultText")).contains("Money %d." % first_end)
+
+
+func test_a_season_not_yet_played_cannot_be_picked() -> void:
+	var viewer := _viewer()
+	var third := viewer.get_node("%Seasons").get_child(2) as Button
+	assert_bool(third.disabled).is_true()
+	viewer.show_season(3)
+	assert_int(viewer.season).is_equal(1)
 
 
 func test_the_new_run_button_starts_again_on_the_same_seed() -> void:
@@ -172,6 +214,7 @@ func test_bad_data_shows_a_problem_and_back_still_works() -> void:
 	viewer.valley_id = "no_such_valley"
 	add_child(viewer)
 	assert_bool((viewer.get_node("%Problem") as Label).visible).is_true()
+	assert_bool((viewer.get_node("%Prepare") as Control).visible).is_false()
 	var back := viewer.get_node("%Back") as Button
 	assert_bool(back.pressed.is_connected(viewer._back_to_valley)).is_true()
 

@@ -68,6 +68,12 @@ func _gui_input(event: InputEvent) -> void:
 			segment_pressed.emit(segment_id)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT and _hover != "":
+		_hover = ""
+		queue_redraw()
+
+
 func _segment_under(point: Vector2) -> String:
 	return _layout.segment_at(_to_sheet(point), CLICK_TOLERANCE)
 

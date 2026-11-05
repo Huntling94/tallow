@@ -127,6 +127,8 @@ func press_segment(segment_id: String) -> void:
 		return
 	if _draft.remove(segment_id):
 		_hint.text = "Taken back."
+	elif _draft.defences().has(segment_id):
+		_hint.text = REASONS["segment_taken"]
 	elif _picked == "":
 		_hint.text = HINT_PICK_FIRST
 	else:
@@ -215,7 +217,7 @@ func _show_phase() -> void:
 	(%Controls as Control).visible = not preparing
 	_slider.visible = not preparing
 	(%Result as Control).visible = finished
-	# The result says the same and more, and the panel has no room for both.
+	# The result carries the money and totals, and the panel has no room for both.
 	_totals.visible = not finished
 	(%LogHeading as Control).visible = not preparing
 	(%LogBox as Control).visible = not preparing
@@ -257,10 +259,10 @@ func _show_result(frame: Dictionary) -> void:
 			% [season, frame["killed"], frame["breached"], frame["income"], frame["breach_costs"]]
 		)
 	)
+	var closing := "Money %d." % frame["money"]
 	if played >= SEASONS:
-		lines.append("Run over. Final money %d." % _run.state.money)
-	else:
-		lines.append("Money %d." % frame["money"])
+		closing += " Run over, final money %d." % _run.state.money
+	lines.append(closing)
 	_result_text.text = "\n".join(lines)
 	_next.visible = played < SEASONS
 	_next.text = "Prepare season %d" % (played + 1)
