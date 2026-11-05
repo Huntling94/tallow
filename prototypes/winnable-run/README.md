@@ -4,10 +4,13 @@ Issue #58. Throwaway, and never promoted: anything kept is rebuilt through the f
 
 A small 3D tower defence. Open `index.html` in a browser that supports WebGL2. It is one file with no libraries.
 
-- **Goal:** hold the town through five seasons. Each beast that reaches the gate costs 1 town; the Old Bull in the last season costs 5.
-- **Building:** towers go on rings beside a road. Pits and fences go on rings on the road. You can build during a herd, and take back anything built since the last herd.
-- **Steering:** at the fork each beast picks a road. Longer roads and scarier roads put it off. Fences scare a lot, towers a little, pits not at all. The odds are never shown: you read them from where the herd walks, and from the bright tracks it leaves.
-- **Keys:** 1, 2, 3 pick a tool. Space releases the herd or pauses.
+- **Goal:** hold the town through five seasons. A beast at the gate costs town: 1 for most, 2 for an ironhide, 5 for the Old Bull in the last season.
+- **Entrances:** herds come from the west, north or south, and from more of them as seasons pass. The top bar and a marker on the map warn you where the next one starts, and what is in it.
+- **Roads:** a network with forks. At every fork a beast weighs the whole way to the town. Longer and scarier roads put it off. The north cutting has few places to build beside it, and the shallows in the south slow beasts down.
+- **Building:** click a ring for a menu, or pick a card and click rings. Rings beside roads take towers and mortars, and pale rings on hills add range. Rings on roads take pits and fences. Click something built to sell it: full price before the next herd, half after. You can build during a herd.
+- **Beasts:** runners are fast and ignore fences. Ironhides are slow, tough and too heavy for pits.
+- **Steering:** fences scare a lot, towers and mortars a little, pits not at all. The odds are never shown: you read them from where the herd walks, and from the bright tracks it leaves.
+- **Keys:** 1 to 4 pick a card. Space releases the herd or pauses. Escape cancels.
 
 `tune.mjs` plays the rules with simple players, to set the numbers. It reads them from between `// RULES-START` and `// RULES-END`, and the 3D view sits outside that block.
 
@@ -15,4 +18,4 @@ A small 3D tower defence. Open `index.html` in a browser that supports WebGL2. I
 node prototypes/winnable-run/tune.mjs
 ```
 
-Win rates over 2,000 runs: building nothing 0%, careless 6%, sensible (towers where the herd walks, no fences) 87%, steering with fences 94%.
+Win rates over 2,000 runs: building nothing 0%, careless 6%, sensible (guns where the herd walks, no fences) 83%, funnelling with fences 92%.

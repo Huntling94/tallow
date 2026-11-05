@@ -23,15 +23,26 @@
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   #gl { pointer-events:none; }
   #bar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:8px 14px; background:var(--panel); }
-  #hint { flex:1; min-width:180px; color:var(--muted); font-size:13.5px; }
+  #next { flex:1; min-width:120px; color:#ffb4a6; font-size:13.5px; text-align:right; }
+  #tools { flex:1; min-width:0; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; }
+  #side { display:flex; flex-direction:column; gap:6px; }
+  .card { display:grid; grid-template-columns:52px 1fr; column-gap:8px; align-items:center; text-align:left; padding:4px 8px 4px 4px; min-width:0; }
+  .card img { grid-row:span 2; width:52px; height:42px; object-fit:contain; background:#10181c; border-radius:4px; }
+  .card b { font-weight:600; font-size:14px; white-space:nowrap; }
+  .card b i { font-style:normal; color:var(--lamp); margin-left:5px; }
+  .card small { color:var(--muted); font-size:11.5px; line-height:1.2; }
+  .card kbd { display:none; }
+  #menu { position:absolute; z-index:3; width:230px; display:flex; flex-direction:column; gap:5px; padding:6px; background:#141d23f2; border:1px solid var(--lamp); border-radius:7px; box-shadow:0 6px 20px #0009; }
+  #menu .title { color:var(--muted); font-size:12.5px; padding:0 3px; }
+  @media (max-width:640px) { #tools { grid-template-columns:repeat(2, minmax(0, 1fr)); } #next { display:none; } }
   button { font:inherit; color:var(--ink); background:#22303a; border:1px solid var(--line); border-radius:5px; padding:7px 11px; cursor:pointer; }
   button:hover { background:#2b3b46; }
   button.on { background:#3a2c17; border-color:var(--lamp); }
   button.poor { opacity:.5; }
   button.primary { color:#1a1208; background:var(--lamp); border-color:var(--lamp); font-weight:600; min-width:140px; }
-  button.quiet { margin-left:auto; color:var(--muted); padding:4px 9px; font-size:13px; }
+  button.quiet { color:var(--muted); padding:4px 9px; font-size:13px; }
   button .cost { color:var(--lamp); margin-left:6px; }
-  #end { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:#0b1114cc; text-align:center; padding:16px; }
+  #end { z-index:4; position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:#0b1114cc; text-align:center; padding:16px; }
   #end h2 { margin:0; font-size:30px; color:var(--lamp); }
   #end p { margin:0; color:var(--ink); }
 </style>
@@ -42,18 +53,18 @@
     <span id="season"></span>
     <div id="townBox"><span>Town</span><div class="bar"><i id="townBar"></i></div><span id="townText"></span></div>
     <div id="moneyBox"></div>
+    <span id="next"></span>
     <button id="sound" class="quiet"></button>
   </div>
   <div id="mapBox">
     <canvas id="gl"></canvas>
     <canvas id="map"></canvas>
+    <div id="menu" hidden></div>
     <div id="end" hidden><h2 id="endTitle"></h2><p id="endBody"></p><button class="primary" id="again">New run</button></div>
   </div>
   <div id="bar">
-    <span id="tools" style="display:flex;gap:6px"></span>
-    <span id="hint"></span>
-    <button id="speed">1×</button>
-    <button id="go" class="primary"></button>
+    <div id="tools"></div>
+    <div id="side"><button id="go" class="primary"></button><button id="speed">1×</button></div>
   </div>
 </div>
 
@@ -61,35 +72,54 @@
 // RULES-START
 // Throwaway prototype rules. Nothing here is shared with game/.
 const TUNE = {
-  startMoney: 180,
-  seasonPay: 40,
+  startMoney: 220,
+  seasonPay: 60,
   killReward: 8,
   town: 20,
   herds: [8, 11, 14, 17, 20],
   beastHealth: [2, 3, 4, 5, 7],
+  entrances: [1, 1, 2, 2, 3], // how many ways in each season
+  mix: [{}, { runner: 0.25 }, { runner: 0.2, ironhide: 0.15 }, { runner: 0.25, ironhide: 0.2 }, { runner: 0.25, ironhide: 0.25 }],
   spawnEvery: 1.3,
   firstSpawn: 1.4,
   speed: 55,
-  bull: { health: 30, speed: 0.6, harm: 5, reward: 50 },
   lengthShy: 1 / 90, // how much longer roads put beasts off
   fenceReach: 26,
   fenceSlow: 0.45,
+  shallowsSlow: 0.55,
   shotSpeed: 190,
+  potSeconds: 0.9,
+  hillRange: 1.35,
+  sellBack: 0.5,
+};
+
+const KINDS = {
+  common: { name: 'Beasts', health: 1, speed: 1, shy: 1, harm: 1, reward: 1, pitProof: false, size: 1.3 },
+  runner: { name: 'Runners', health: 0.5, speed: 1.6, shy: 0.2, harm: 1, reward: 1, pitProof: false, size: 0.95 },
+  ironhide: { name: 'Ironhides', health: 2, speed: 0.75, shy: 1, harm: 2, reward: 2, pitProof: true, size: 1.6 },
+  bull: { name: 'The Old Bull', health: 5, speed: 0.6, shy: 0.5, harm: 5, reward: 6, pitProof: true, size: 2.4 },
 };
 
 const DEFENCES = {
-  tower: { name: 'Tower', cost: 60, spot: 'pad', range: 72, reload: 0.7, damage: 1, scare: 0.6 },
+  tower: { name: 'Tower', cost: 60, spot: 'pad', range: 72, reload: 0.7, damage: 1, scare: 0.2 },
+  mortar: { name: 'Mortar', cost: 110, spot: 'pad', range: 100, reload: 2.4, damage: 3, splash: 34, scare: 0.3 },
   pit: { name: 'Pit', cost: 30, spot: 'road', holds: 2, scare: 0 },
   fence: { name: 'Fence', cost: 20, spot: 'road', scare: 1.6 },
 };
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
-// Roads are curves through a few points. All three share the way in and the way out.
-const NECK = { x: 12, y: 200 }, FORK = { x: 90, y: 200 }, MERGE = { x: 530, y: 200 }, GATE = { x: 596, y: 200 };
+// The valley is a network of roads. Beasts pick a road at every fork.
+const NODES = {
+  west: { x: 12, y: 200 }, north: { x: 236, y: 4 }, south: { x: 236, y: 396 },
+  a: { x: 110, y: 200 }, b: { x: 236, y: 100 }, c: { x: 236, y: 300 }, d: { x: 345, y: 200 },
+  e: { x: 452, y: 112 }, f: { x: 452, y: 288 }, m: { x: 530, y: 200 }, gate: { x: 596, y: 200 },
+};
+const ENTRANCES = { west: 'West', north: 'North', south: 'South' };
+const NEAREST_TOWN_FIRST = ['gate', 'm', 'e', 'f', 'd', 'b', 'c', 'a', 'west', 'north', 'south'];
+const NECK = NODES.west, GATE = NODES.gate;
 
-function curve(points) {
-  const p = [FORK, ...points, MERGE].map((q) => ({ ...q }));
+function curve(p) {
   const out = [];
   for (let i = 0; i < p.length - 1; i++) {
     const a = p[Math.max(i - 1, 0)], b = p[i], c = p[i + 1], e = p[Math.min(i + 2, p.length - 1)];
@@ -99,23 +129,37 @@ function curve(points) {
       out.push({ x: mix('x'), y: mix('y') });
     }
   }
+  out.push({ ...p[p.length - 1] });
   return out;
 }
 
-function makeRoad(points) {
-  const pts = [NECK, ...curve(points), MERGE, GATE];
+function makeRoad(from, to, bends, extra) {
+  const pts = curve([NODES[from], ...bends.map(([x, y]) => ({ x, y })), NODES[to]]);
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1], pts[i]));
-  return { pts, cum, len: cum[cum.length - 1] };
+  return { from, to, pts, cum, len: cum[cum.length - 1], ...extra };
 }
 
 const ROADS = [
-  makeRoad([{ x: 150, y: 112 }, { x: 250, y: 62 }, { x: 360, y: 70 }, { x: 455, y: 122 }]),
-  makeRoad([{ x: 170, y: 222 }, { x: 250, y: 178 }, { x: 330, y: 224 }, { x: 420, y: 180 }]),
-  makeRoad([{ x: 142, y: 290 }, { x: 240, y: 342 }, { x: 350, y: 334 }, { x: 452, y: 282 }]),
+  makeRoad('west', 'a', [], { fixed: true }),
+  makeRoad('north', 'b', [[232, 50]], { fixed: true }),
+  makeRoad('south', 'c', [[232, 350]], { fixed: true }),
+  makeRoad('a', 'b', [[166, 138]], {}),
+  makeRoad('a', 'd', [[172, 226], [262, 178]], {}),
+  makeRoad('a', 'c', [[166, 262]], {}),
+  makeRoad('b', 'e', [[345, 62]], { cutting: true }),
+  makeRoad('b', 'd', [[296, 146]], {}),
+  makeRoad('c', 'd', [[296, 254]], {}),
+  makeRoad('c', 'f', [[345, 340]], { shallows: true }),
+  makeRoad('d', 'e', [[402, 166]], {}),
+  makeRoad('d', 'm', [[436, 214]], {}),
+  makeRoad('d', 'f', [[402, 240]], {}),
+  makeRoad('e', 'm', [[500, 150]], {}),
+  makeRoad('f', 'm', [[500, 250]], {}),
+  makeRoad('m', 'gate', [], { fixed: true }),
 ];
-const ENTRY = dist(NECK, FORK);
-const EXIT = dist(MERGE, GATE);
+const OUT = {};
+ROADS.forEach((road, i) => { (OUT[road.from] = OUT[road.from] || []).push(i); });
 
 function pointOn(road, d) {
   const { pts, cum } = road;
@@ -132,21 +176,30 @@ function headingOn(road, d) {
   return Math.atan2(b.y - a.y, b.x - a.x);
 }
 
-// Places to build. Pads sit beside roads and take towers; marks sit on a road and take pits or fences.
+function rangeOf(spot, type) { return DEFENCES[type].range * (spot.hill ? TUNE.hillRange : 1); }
+
+// Places to build. Pads sit beside roads and take towers and mortars; hills add range.
+// Marks sit on a road and take pits or fences. The way in and the last stretch take neither.
 const SPOTS = [];
-for (const [x, y] of [[205, 112], [300, 100], [385, 114], [300, 28], [215, 165], [285, 240], [300, 172], [385, 232], [205, 292], [300, 300], [395, 280], [300, 372]]) {
-  const spot = { id: `p${SPOTS.length}`, kind: 'pad', x, y, reach: [] };
-  ROADS.forEach((road, r) => {
-    for (let d = ENTRY; d < road.len - EXIT; d += 4) {
-      if (dist(spot, pointOn(road, d)) <= DEFENCES.tower.range) { spot.reach.push(r); break; }
-    }
-  });
+const PADS = [
+  [150, 170], [150, 232], [214, 150], [214, 250], [292, 104], [292, 296], [345, 150], [345, 256],
+  [400, 205], [440, 150], [440, 250], [345, 374], [150, 104], [150, 296],
+  [278, 202, true], [404, 92, true], [404, 318, true],
+];
+for (const [x, y, hill] of PADS) {
+  const spot = { id: `p${SPOTS.length}`, kind: 'pad', x, y, hill: !!hill, h: hill ? 15 : 0, reach: { tower: [], mortar: [] } };
+  for (const type of ['tower', 'mortar']) {
+    ROADS.forEach((road, r) => {
+      if (road.pts.some((p) => dist(spot, p) <= rangeOf(spot, type))) spot.reach[type].push(r);
+    });
+  }
   SPOTS.push(spot);
 }
 ROADS.forEach((road, r) => {
-  for (const share of [0.3, 0.5, 0.7]) {
+  if (road.fixed) return;
+  for (const share of road.len > 150 ? [0.33, 0.67] : [0.5]) {
     const d = road.len * share, p = pointOn(road, d);
-    SPOTS.push({ id: `r${r}${share * 10}`, kind: 'road', x: p.x, y: p.y, road: r, d, angle: headingOn(road, d), reach: [r] });
+    SPOTS.push({ id: `r${r}${share * 100}`, kind: 'road', x: p.x, y: p.y, h: 0, road: r, d, angle: headingOn(road, d), reach: { pit: [r], fence: [r] } });
   }
 });
 const SPOT = Object.fromEntries(SPOTS.map((s) => [s.id, s]));
@@ -171,24 +224,57 @@ function makeRng(seed) { // mulberry32
   };
 }
 
+// The herd is decided ahead of time, so the warning before each season is true.
+function planSeason(run) {
+  const s = run.season - 1, ways = [];
+  for (let i = 0; i < TUNE.entrances[s]; i++) ways.push(run.order[(s + i) % 3]);
+  const size = TUNE.herds[s], mix = TUNE.mix[s], queue = [], kinds = {};
+  const last = {};
+  for (let i = 0; i < size; i++) {
+    const way = ways[i % ways.length];
+    let kind = 'common', draw = run.rng();
+    for (const k of Object.keys(mix)) { draw -= mix[k]; if (draw < 0) { kind = k; break; } }
+    kinds[kind] = true;
+    last[way] = (last[way] === undefined ? TUNE.firstSpawn - TUNE.spawnEvery : last[way]) + TUNE.spawnEvery;
+    queue.push({ at: last[way], way, kind });
+  }
+  if (run.season === TUNE.herds.length) {
+    queue.push({ at: TUNE.firstSpawn + (size / ways.length / 2) * TUNE.spawnEvery, way: ways[0], kind: 'bull' });
+    kinds.bull = true;
+  }
+  queue.sort((a, b) => a.at - b.at);
+  return { ways, queue, kinds: Object.keys(kinds).filter((k) => k !== 'common') };
+}
+
 function newRun(seed) {
-  return {
+  const run = {
     seed, rng: makeRng(seed), season: 1, money: TUNE.startMoney, town: TUNE.town,
-    built: {}, fresh: [], tracks: [0, 0, 0], kills: 0, night: null, over: null,
+    built: {}, fresh: [], tracks: ROADS.map(() => 0), kills: 0, night: null, over: null, order: ['west', 'north', 'south'],
   };
+  for (let i = 2; i > 0; i--) {
+    const j = Math.floor(run.rng() * (i + 1));
+    [run.order[i], run.order[j]] = [run.order[j], run.order[i]];
+  }
+  run.plan = planSeason(run);
+  return run;
+}
+
+function scares(run) {
+  const out = ROADS.map(() => 0);
+  for (const id of Object.keys(run.built)) {
+    const type = run.built[id].type;
+    for (const r of SPOT[id].reach[type]) out[r] += DEFENCES[type].scare;
+  }
+  return out;
 }
 
 // The odds are never shown: the player reads them from where the beasts walk.
-function scareOn(run, r) {
-  let total = 0;
-  for (const id of Object.keys(run.built)) {
-    if (SPOT[id].reach.includes(r)) total += DEFENCES[run.built[id].type].scare;
-  }
-  return total;
-}
-
-function oddsOf(run) {
-  const us = ROADS.map((road, r) => -road.len * TUNE.lengthShy - scareOn(run, r));
+// At a fork a beast weighs each road by the whole way from there to the town.
+function oddsAt(run, node, shy) {
+  const scare = scares(run), cost = { gate: 0 };
+  const stepCost = (r) => ROADS[r].len * TUNE.lengthShy + scare[r] * shy + (ROADS[r].shallows ? 0.5 : 0) + cost[ROADS[r].to];
+  for (const n of NEAREST_TOWN_FIRST) if (n !== 'gate') cost[n] = Math.min(...OUT[n].map(stepCost));
+  const us = OUT[node].map((r) => -stepCost(r));
   const top = Math.max(...us);
   const ws = us.map((u) => Math.exp(u - top));
   const total = ws.reduce((a, b) => a + b, 0);
@@ -211,77 +297,80 @@ function place(run, type, id) {
   return '';
 }
 
-function takeBack(run, id) {
-  if (run.night || !run.fresh.includes(id)) return false;
-  run.money += DEFENCES[run.built[id].type].cost;
-  delete run.built[id];
-  run.fresh = run.fresh.filter((s) => s !== id);
-  return true;
+function sellPrice(run, id) {
+  const cost = DEFENCES[run.built[id].type].cost;
+  return run.fresh.includes(id) ? cost : Math.floor(cost * TUNE.sellBack);
 }
 
-function herdSize(run) { return TUNE.herds[run.season - 1]; }
+function sell(run, id) {
+  run.money += sellPrice(run, id);
+  delete run.built[id];
+  run.fresh = run.fresh.filter((s) => s !== id);
+}
+
+function herdSize(run) { return run.plan.queue.length; }
 function finalSeason(run) { return run.season === TUNE.herds.length; }
 
 function startNight(run) {
-  const queue = [];
-  const health = TUNE.beastHealth[run.season - 1];
-  const size = herdSize(run);
-  for (let i = 0; i < size; i++) {
-    queue.push({ at: TUNE.firstSpawn + i * TUNE.spawnEvery, health, bull: false });
-  }
-  if (finalSeason(run)) queue.splice(size >> 1, 0, { at: TUNE.firstSpawn + (size >> 1) * TUNE.spawnEvery, health: TUNE.bull.health, bull: true });
   run.fresh = [];
-  run.night = { time: 0, queue, beasts: [], shots: [], events: [], killed: 0, breached: 0, walked: [0, 0, 0], done: false, nextId: 1 };
+  run.night = { time: 0, queue: run.plan.queue.slice(), beasts: [], shots: [], pots: [], events: [], killed: 0, breached: 0, walked: ROADS.map(() => 0), done: false, nextId: 1 };
 }
 
-function placeOf(b) {
-  const road = ROADS[b.road];
-  const p = pointOn(road, b.d), a = headingOn(road, b.d);
-  const fade = Math.min(1, b.d / 60, (road.len - b.d) / 60);
+function placeOf(b, ahead) {
+  const road = ROADS[b.road], d = Math.min(b.d + (ahead || 0), road.len);
+  const p = pointOn(road, d), a = headingOn(road, d);
+  const fade = Math.min(1, d / 24, (road.len - d) / 24);
   return { x: p.x - Math.sin(a) * b.off * fade, y: p.y + Math.cos(a) * b.off * fade, a };
 }
 
 function slay(run, b, how) {
-  const n = run.night, at = placeOf(b);
+  const n = run.night, at = placeOf(b), kind = KINDS[b.kind];
   b.dead = true;
-  const reward = b.bull ? TUNE.bull.reward : TUNE.killReward;
+  const reward = TUNE.killReward * kind.reward;
   run.money += reward;
   run.kills += 1;
   n.killed += 1;
-  n.events.push({ kind: how, x: at.x, y: at.y, a: at.a, reward, bull: b.bull });
+  n.events.push({ kind: how, x: at.x, y: at.y, a: at.a, reward, beast: b.kind });
 }
 
-function moveBeast(run, b, dt) {
-  const n = run.night;
-  let pace = TUNE.speed * (b.bull ? TUNE.bull.speed : 1);
+function paceOf(run, b) {
+  const road = ROADS[b.road];
+  let pace = TUNE.speed * KINDS[b.kind].speed;
+  if (road.shallows && b.d > road.len * 0.3 && b.d < road.len * 0.7) pace *= TUNE.shallowsSlow;
   for (const id of Object.keys(run.built)) {
     const s = SPOT[id];
     if (run.built[id].type === 'fence' && s.road === b.road && Math.abs(s.d - b.d) < TUNE.fenceReach) pace *= TUNE.fenceSlow;
   }
-  const was = b.d;
-  b.d += pace * dt;
-  if (!b.chosen && b.d >= ENTRY) {
-    b.chosen = true;
-    b.road = pick(oddsOf(run), run.rng);
-    n.walked[b.road] += 1;
-  }
-  if (!b.chosen) return;
+  return pace;
+}
+
+function moveBeast(run, b, dt) {
+  const n = run.night, kind = KINDS[b.kind];
+  const was = b.d, step = paceOf(run, b) * dt;
+  b.d += step;
+  b.walked += step;
   for (const id of Object.keys(run.built)) {
     const s = SPOT[id], def = run.built[id];
-    if (def.type !== 'pit' || s.road !== b.road || def.left <= 0 || b.bull) continue;
+    if (def.type !== 'pit' || s.road !== b.road || def.left <= 0 || kind.pitProof) continue;
     if (was < s.d && b.d >= s.d) {
       def.left -= 1;
       slay(run, b, 'pit');
       return;
     }
   }
-  if (b.d >= ROADS[b.road].len) {
-    const harm = b.bull ? TUNE.bull.harm : 1;
-    b.dead = true;
-    run.town = Math.max(run.town - harm, 0);
-    n.breached += 1;
-    n.events.push({ kind: 'breach', harm, bull: b.bull });
-    if (run.town <= 0) { run.over = 'lost'; n.done = true; }
+  while (b.d >= ROADS[b.road].len) {
+    const road = ROADS[b.road];
+    if (road.to === 'gate') {
+      b.dead = true;
+      run.town = Math.max(run.town - kind.harm, 0);
+      n.breached += 1;
+      n.events.push({ kind: 'breach', harm: kind.harm, beast: b.kind });
+      if (run.town <= 0) { run.over = 'lost'; n.done = true; }
+      return;
+    }
+    b.d -= road.len;
+    b.road = OUT[road.to][pick(oddsAt(run, road.to, kind.shy), run.rng)];
+    n.walked[b.road] += 1;
   }
 }
 
@@ -289,23 +378,30 @@ function fireTowers(run, dt) {
   const n = run.night;
   for (const id of Object.keys(run.built)) {
     const def = run.built[id], spot = SPOT[id], d = DEFENCES[def.type];
-    if (def.type !== 'tower') continue;
+    if (!d.reload) continue;
     def.wait -= dt;
     if (def.wait > 0) continue;
+    const range = rangeOf(spot, def.type);
     let target = null, best = -1, at = null;
     for (const b of n.beasts) {
-      if (b.dead || b.d <= best || b.health <= b.incoming) continue;
+      if (b.dead || b.walked <= best || b.health <= b.incoming) continue;
       const p = placeOf(b);
-      if (dist(spot, p) <= d.range) { target = b; best = b.d; at = p; }
+      if (dist(spot, p) <= range) { target = b; best = b.walked; at = p; }
     }
     if (!target) continue;
     def.wait = d.reload;
-    target.incoming += d.damage;
     def.aim = Math.atan2(at.y - spot.y, at.x - spot.x);
     def.fired = n.time;
     const x = spot.x + Math.cos(def.aim) * 13, y = spot.y + Math.sin(def.aim) * 13;
-    n.shots.push({ x, y, target, damage: d.damage, a: def.aim, gone: false });
-    n.events.push({ kind: 'fire', x, y, a: def.aim });
+    if (def.type === 'mortar') {
+      const lead = placeOf(target, paceOf(run, target) * TUNE.potSeconds);
+      n.pots.push({ x0: spot.x, y0: spot.y, h0: 18 + spot.h, x: lead.x, y: lead.y, t: 0 });
+      n.events.push({ kind: 'lob', x, y, h: 18 + spot.h });
+    } else {
+      target.incoming += d.damage;
+      n.shots.push({ x, y, h0: 30 + spot.h, target, damage: d.damage, a: def.aim, gone: false });
+      n.events.push({ kind: 'fire', x, y, h: 30 + spot.h, a: def.aim });
+    }
   }
 }
 
@@ -326,14 +422,29 @@ function moveShots(run, dt) {
     if (s.target.health <= 0) slay(run, s.target, 'kill');
   }
   n.shots = n.shots.filter((s) => !s.gone);
+  for (const pot of n.pots) {
+    pot.t += dt / TUNE.potSeconds;
+    if (pot.t < 1) continue;
+    n.events.push({ kind: 'blast', x: pot.x, y: pot.y });
+    for (const b of n.beasts) {
+      if (b.dead || dist(pot, placeOf(b)) > DEFENCES.mortar.splash) continue;
+      b.health -= DEFENCES.mortar.damage;
+      b.hitAt = n.time;
+      if (b.health <= 0) slay(run, b, 'kill');
+    }
+  }
+  n.pots = n.pots.filter((p) => p.t < 1);
 }
 
 function stepNight(run, dt) {
   const n = run.night;
   n.time += dt;
   while (n.queue.length && n.queue[0].at <= n.time) {
-    const q = n.queue.shift();
-    n.beasts.push({ id: n.nextId++, road: 0, chosen: false, d: 0, off: (run.rng() - 0.5) * 8, health: q.health, full: q.health, bull: q.bull, hitAt: -9, dead: false, incoming: 0 });
+    const q = n.queue.shift(), kind = KINDS[q.kind];
+    const health = Math.max(1, Math.round(TUNE.beastHealth[run.season - 1] * kind.health));
+    const road = OUT[q.way][0];
+    n.walked[road] += 1;
+    n.beasts.push({ id: n.nextId++, road, kind: q.kind, d: 0, walked: 0, off: (run.rng() - 0.5) * 8, health, full: health, hitAt: -9, dead: false, incoming: 0 });
   }
   for (const b of n.beasts) {
     if (!b.dead) moveBeast(run, b, dt);
@@ -342,7 +453,7 @@ function stepNight(run, dt) {
   fireTowers(run, dt);
   moveShots(run, dt);
   n.beasts = n.beasts.filter((b) => !b.dead);
-  if (!n.queue.length && !n.beasts.length) {
+  if (!n.queue.length && !n.beasts.length && !n.pots.length) {
     n.done = true;
     if (run.season >= TUNE.herds.length) run.over = 'won';
   }
@@ -354,6 +465,7 @@ function nextSeason(run) {
   run.money += TUNE.seasonPay;
   run.night = null;
   for (const def of Object.values(run.built)) if (def.type === 'pit') def.left = DEFENCES.pit.holds;
+  run.plan = planSeason(run);
 }
 // RULES-END
 </script>
@@ -362,18 +474,21 @@ function nextSeason(run) {
 // The view: real 3D in plain WebGL2, no libraries. Sheet x is world x, sheet y is
 // world z, and height is world y, so the rules above never know they are in 3D.
 const SHEET = { w: 664, h: 400 };
-const HINTS = {
-  tower: 'Tower: shoots what walks in range. Beasts shy away from it a little.',
-  pit: 'Pit: hidden on the road. Swallows two beasts a season.',
-  fence: 'Fence: turns most beasts off a road and slows the rest.',
+const BLURBS = {
+  tower: 'Fast shots at one beast. Slightly scary.',
+  mortar: 'Slow blast that hits a group. Can miss runners.',
+  pit: 'Hidden. Swallows two a season. Not ironhides.',
+  fence: 'Turns most beasts away, slows the rest. Not runners.',
 };
+const TINTS = { common: [1, 1, 1, 1], runner: [1.3, 1.25, 1.05, 1], ironhide: [0.55, 0.62, 0.72, 1], bull: [1.35, 0.72, 0.6, 1] };
+const THUMB = {};
 const $ = (id) => document.getElementById(id);
 const overlay = $('map');
 const ctx = overlay.getContext('2d');
 const glCanvas = $('gl');
 const gl = glCanvas.getContext('webgl2', { antialias: true });
 
-let run, tool, hover, paused, speed = 1, last = 0, spare = 0;
+let run, tool, hover, paused, speed = 1, last = 0, spare = 0, menuSpot = null, preview = '';
 let sparks, floats, stains, bodies, rings, flashes, banner, shake, redFlash, soundOn = true, audio = null, shownMoney = 0, justHurt = 0;
 
 const HOUSES = [[612, 150, 0.3], [640, 172, -0.2], [610, 240, 0.1], [642, 232, 0.5], [628, 200, 1.5], [664, 202, 0], [660, 150, 0.7], [664, 256, -0.4]];
@@ -426,7 +541,16 @@ function heightAt(x, z, clear) {
   const k = smooth(16, 62, clear === undefined ? clearance(x, z) : clear);
   const n = noise(x / 42, z / 42) * 0.7 + noise(x / 17, z / 17) * 0.3;
   const edge = Math.max(0, 14 - z) * 0.9 + Math.max(0, 40 - x) * 1.0 + Math.max(0, x - 710) * 0.8 + Math.max(0, z - 430) * 0.12;
-  return k * (n * 13 + edge * (0.55 + n));
+  let top = k * (n * 13 + edge * (0.55 + n));
+  for (const s of SPOTS) {
+    if (!s.hill) continue;
+    const near = Math.hypot(s.x - x, s.y - z);
+    if (near > 44) continue;
+    let road = 1e9;
+    for (const r of ROADS) for (const p of r.pts) road = Math.min(road, Math.hypot(p.x - x, p.y - z));
+    top = Math.max(top, s.h * (1 - smooth(11, 42, near)) * smooth(11, 22, road));
+  }
+  return top;
 }
 
 // --- Shaders ---
@@ -443,7 +567,7 @@ function program(vs, fs) {
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
   return p;
 }
-const MAX_LIGHTS = 16;
+const MAX_LIGHTS = 22;
 const mainProgram = gl && program(`#version 300 es
 in vec3 aPos; in vec3 aNor; in vec3 aCol;
 uniform mat4 uVP, uM;
@@ -572,9 +696,23 @@ function buildGround() {
     p.beginPath(); p.ellipse(GX[0] + r() * 1020, GZ[0] + r() * 1060, 2 + r() * 9, 1 + r() * 5, r() * 3, 0, 7); p.fill();
   }
   p.globalAlpha = 1; p.lineCap = 'round'; p.lineJoin = 'round';
+  for (const road of ROADS) {
+    if (!road.shallows) continue;
+    const q = pointOn(road, road.len / 2);
+    p.save(); p.translate(q.x, q.y); p.scale(1, 0.5);
+    const water = p.createRadialGradient(0, 0, 40, 0, 0, 120);
+    water.addColorStop(0, '#3f6f80'); water.addColorStop(0.75, '#3c6470'); water.addColorStop(1, '#47786f00');
+    p.fillStyle = water; p.beginPath(); p.arc(0, 0, 120, 0, 7); p.fill(); p.restore();
+  }
   const trace = (road) => { p.beginPath(); road.pts.forEach((q, i) => (i ? p.lineTo(q.x, q.y) : p.moveTo(q.x, q.y))); };
   for (const [colour, width] of [['#3a382c', 25], ['#8b7757', 21], ['#9c8763', 14]]) {
     ROADS.forEach((road) => { trace(road); p.strokeStyle = colour; p.lineWidth = width; p.stroke(); });
+  }
+  for (const road of ROADS) {
+    if (!road.shallows) continue;
+    p.beginPath();
+    road.pts.forEach((q, i) => { const share = i / road.pts.length; if (share > 0.3 && share < 0.7) p.lineTo(q.x, q.y); else p.moveTo(q.x, q.y); });
+    p.strokeStyle = '#5b95ad'; p.lineWidth = 20; p.globalAlpha = 0.7; p.stroke(); p.globalAlpha = 1;
   }
   groundCanvas = document.createElement('canvas');
   groundCanvas.width = groundBase.width; groundCanvas.height = groundBase.height;
@@ -591,7 +729,7 @@ function paintTracks() {
   const p = groundCanvas.getContext('2d');
   p.setTransform(1, 0, 0, 1, 0, 0); p.drawImage(groundBase, 0, 0);
   p.scale(2, 2); p.translate(-GX[0], -GZ[0]);
-  const total = run.tracks[0] + run.tracks[1] + run.tracks[2];
+  const total = Math.max(...run.tracks);
   if (total) {
     p.lineCap = 'butt';
     ROADS.forEach((road, r) => {
@@ -611,6 +749,16 @@ function buildMeshes() {
   MESH.scenery = shape((m) => {
     const r = makeRng(21);
     let placed = 0;
+    for (const road of ROADS) {
+      if (!road.cutting) continue;
+      road.pts.forEach((p, i) => {
+        if (i < 2 || i > road.pts.length - 3) return;
+        for (const side of [-1, 1]) {
+          const a = headingOn(road, road.cum[i]), far = 17 + r() * 7, s = 0.9 + r() * 0.8;
+          m.ball(p.x - Math.sin(a) * far * side, 3, p.y + Math.cos(a) * far * side, 9 * s, 11 * s, 8 * s, '#7d8078', 2, 5);
+        }
+      });
+    }
     for (let i = 0; i < 1600 && placed < 420; i++) {
       const x = GX[0] + r() * (GX[1] - GX[0]), z = GZ[0] + r() * 620;
       const c = clearance(x, z);
@@ -653,6 +801,16 @@ function buildMeshes() {
     m.cyl(0, 24, 0, 9, 9, 2.4, 8, '#6f5a43');
     m.box(-7.5, 26, 0, 1.4, 12, 1.4, '#4b3b2c');
   });
+  MESH.mortar = shape((m) => {
+    m.cyl(0, 0, 0, 12, 10, 4, 8, '#5b6266');
+    m.box(0, 4, 0, 19, 7, 15, '#57452f');
+  });
+  MESH.barrel = shape((m) => { m.cyl(0, 0, 0, 5.6, 7, 13, 8, '#3f4a50'); m.cyl(0, 13, 0, 7.4, 7.4, 1.6, 8, '#6a7479'); });
+  MESH.pot = shape((m) => m.ball(0, 0, 0, 3.4, 3.4, 3.4, '#ffb85c', 3, 6));
+  MESH.beacon = shape((m) => { m.cyl(0, 0, 0, 7, 3, 58, 6, '#ffffff'); });
+  MESH.plates = shape((m) => {
+    for (const x of [-8, -3, 2, 7]) m.cyl(x, 15.5, 0, 3, 0.4, 5, 4, '#c8d0d6');
+  });
   MESH.lamp = shape((m) => m.ball(0, 0, 0, 2.6, 2.6, 2.6, '#ffc766', 3, 6));
   MESH.bow = shape((m) => {
     m.box(4, -1, 0, 22, 2.4, 3, '#b9bfba');
@@ -681,7 +839,7 @@ let cam = { w: 0, h: 0 }, viewProj = null, eye = [0, 0, 0];
 function placeCamera(w, h) {
   const dir = norm([0, 0.68, 0.73]), at = [334, 0, 176], aspect = w / h;
   const proj = perspective(32 * Math.PI / 180, aspect, 20, 3000);
-  const corners = [[2, 0, 388], [668, 0, 388], [2, 0, 0], [680, 0, 0]];
+  const corners = [[2, 0, 398], [668, 0, 398], [2, 0, 0], [680, 0, 0]];
   let d = 800;
   for (let i = 0; i < 6; i++) {
     const vp = mul(proj, lookAt([at[0] + dir[0] * d, dir[1] * d, at[2] + dir[2] * d], at));
@@ -718,16 +876,43 @@ function flat(mesh, x, z, y, r, tint, rz) { // something lying on the ground
   gl.depthMask(true);
 }
 
+// Pictures for the build cards: each defence drawn once by the same 3D renderer.
+function makeThumbs() {
+  glCanvas.width = 156; glCanvas.height = 126;
+  gl.viewport(0, 0, 156, 126);
+  gl.useProgram(mainProgram);
+  gl.uniform1i(U.uUseTex, 0);
+  gl.uniform4fv(U.uLP, new Float32Array([40, 70, 60, 220])); gl.uniform3fv(U.uLC, new Float32Array([0.9, 0.75, 0.55]));
+  gl.uniform1i(U.uLN, 1);
+  gl.uniform3fv(U.uEye, [0, 0, 0]);
+  for (const type of Object.keys(DEFENCES)) {
+    const tall = DEFENCES[type].reload ? (type === 'tower' ? 19 : 8) : 3, far = type === 'tower' ? 96 : 60;
+    gl.uniformMatrix4fv(U.uVP, false, mul(perspective(0.62, 156 / 126, 1, 800), lookAt([far * 0.55, tall + far * 0.5, far], [0, tall, 0])));
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    drawDefence({ x: 0, y: 0, h: 0, angle: 0.5 }, { type, left: DEFENCES[type].holds || 0, aim: -0.5, fired: -9 }, null, 1);
+    THUMB[type] = glCanvas.toDataURL();
+  }
+}
+
 // --- Game flow ---
 function start() {
   run = newRun(Math.floor(Math.random() * 1e9));
-  tool = 'tower'; hover = null; paused = false;
+  tool = ''; hover = null; paused = false;
+  closeMenu();
   sparks = []; floats = []; stains = []; bodies = []; rings = []; flashes = []; shake = 0; redFlash = 0;
   shownMoney = run.money;
-  say('A herd is coming', 'Beasts avoid danger. Build, then release them.');
+  say('A herd is coming', `From the ${forecast()}. Click a ring to build.`);
   $('end').hidden = true;
   paintTracks();
   refresh();
+}
+
+function forecast() {
+  const plan = run.plan, names = plan.ways.map((w) => ENTRANCES[w]);
+  const ways = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+  const kinds = plan.kinds.map((k) => KINDS[k].name).join(', ');
+  return kinds ? `${ways}, with ${kinds}` : ways;
 }
 
 function say(title, sub) { banner = { title, sub, age: 0, life: 2.6 }; }
@@ -752,8 +937,8 @@ function spotAt(e) {
   const box = overlay.getBoundingClientRect(), mx = e.clientX - box.left, my = e.clientY - box.top;
   let best = null, bestD = Math.max(20, cam.h / 26);
   for (const s of SPOTS) {
-    if (!run.built[s.id] && (!tool || DEFENCES[tool].spot !== s.kind)) continue;
-    const p = project(s.x, 0, s.y), d = Math.hypot(p.x - mx, p.y - my);
+    if (!run.built[s.id] && tool && DEFENCES[tool].spot !== s.kind) continue;
+    const p = project(s.x, s.h, s.y), d = Math.hypot(p.x - mx, p.y - my);
     if (d < bestD) { bestD = d; best = s; }
   }
   return best;
@@ -774,36 +959,48 @@ function nudge(id, name) { const el = $(id); el.classList.add(name); setTimeout(
 // Rules only record what happened; this turns each record into something to see and hear.
 function play(e) {
   if (e.kind === 'fire') {
-    addSparks(e.x, 30, e.y, 4, PALE, 34, 0.18);
-    addFlash(e.x, 32, e.y, AMBER, 40, 0.12);
+    addSparks(e.x, e.h, e.y, 4, PALE, 34, 0.18);
+    addFlash(e.x, e.h + 2, e.y, AMBER, 40, 0.12);
     beep(520, 0.07, 'square', 0.015, 170);
+  } else if (e.kind === 'lob') {
+    addSparks(e.x, e.h, e.y, 10, AMBER, 44, 0.3);
+    addFlash(e.x, e.h + 4, e.y, AMBER, 50, 0.16);
+    beep(130, 0.16, 'square', 0.04, 70);
+  } else if (e.kind === 'blast') {
+    addSparks(e.x, 6, e.y, 34, AMBER, 95, 0.6);
+    addSparks(e.x, 4, e.y, 14, DUST, 60, 0.7);
+    addFlash(e.x, 18, e.y, AMBER, 90, 0.28);
+    rings.push({ x: e.x, z: e.y, age: 0, life: 0.4, r: DEFENCES.mortar.splash, colour: AMBER });
+    stains.push({ x: e.x, z: e.y, r: 13 });
+    shake = Math.max(shake, 2.5);
+    beep(80, 0.3, 'sawtooth', 0.07, 36);
   } else if (e.kind === 'hit') {
     addSparks(e.x, 11, e.y, 7, PALE, 50, 0.3);
     beep(180, 0.05, 'triangle', 0.03);
   } else if (e.kind === 'kill' || e.kind === 'pit') {
-    const big = e.bull ? 2.4 : 1.3;
+    const big = KINDS[e.beast].size, boss = e.beast === 'bull';
     if (e.kind === 'kill') {
-      addSparks(e.x, 11 * big, e.y, 18 * big, AMBER, 60, 0.6);
-      rings.push({ x: e.x, z: e.y, age: 0, life: 0.45, r: 26 * big, colour: AMBER });
-      stains.push({ x: e.x, z: e.y, r: (7 + Math.random() * 5) * big });
+      addSparks(e.x, 9 * big, e.y, Math.round(14 * big), AMBER, 60, 0.6);
+      rings.push({ x: e.x, z: e.y, age: 0, life: 0.45, r: 20 * big, colour: AMBER });
+      stains.push({ x: e.x, z: e.y, r: (6 + Math.random() * 4) * big });
       if (stains.length > 90) stains.shift();
     } else {
       addSparks(e.x, 3, e.y, 16, DUST, 42, 0.55);
       rings.push({ x: e.x, z: e.y, age: 0, life: 0.5, r: 26, colour: DUST });
       beep(240, 0.25, 'sawtooth', 0.03, 60);
     }
-    bodies.push({ x: e.x, z: e.y, a: e.a, age: 0, life: e.kind === 'pit' ? 0.7 : 1.5, how: e.kind, big, bull: e.bull });
-    addFloat(e.x, e.y, 20 * big, `+${e.reward}`, '#ffc766', e.bull ? 26 : 17);
+    bodies.push({ x: e.x, z: e.y, a: e.a, age: 0, life: e.kind === 'pit' ? 0.7 : 1.5, how: e.kind, big, beast: e.beast });
+    addFloat(e.x, e.y, 16 * big, `+${e.reward}`, '#ffc766', boss ? 26 : 17);
     beep(660, 0.1, 'triangle', 0.035, 880);
   } else if (e.kind === 'breach') {
-    const big = e.bull ? 2.2 : 1;
+    const boss = e.beast === 'bull', big = boss ? 2.2 : 1;
     shake = Math.max(shake, 7 * big);
     redFlash = Math.min(0.5, 0.3 * big);
     justHurt = 0.3;
-    addSparks(GATE.x, 14, GATE.y, 26 * big, RED, 80, 0.7);
+    addSparks(GATE.x, 14, GATE.y, Math.round(26 * big), RED, 80, 0.7);
     addFlash(GATE.x, 24, GATE.y, RED, 110, 0.35);
     rings.push({ x: GATE.x, z: GATE.y, age: 0, life: 0.5, r: 60, colour: RED });
-    addFloat(GATE.x - 8, GATE.y, 34, `-${e.harm}`, '#ff8d7a', e.bull ? 34 : 26);
+    addFloat(GATE.x - 8, GATE.y, 34, `-${e.harm}`, '#ff8d7a', boss ? 34 : 26);
     beep(110, 0.35, 'sawtooth', 0.09, 42);
     nudge('townBox', 'hit');
   }
@@ -818,13 +1015,12 @@ function afterNight() {
   stains = [];
   addFloat(GATE.x - 8, GATE.y + 34, 26, `+${TUNE.seasonPay}`, '#ffc766', 24);
   beep(392, 0.16, 'triangle', 0.05); setTimeout(() => beep(523, 0.22, 'triangle', 0.05), 130);
-  if (finalSeason(run)) say('The last herd', 'The Old Bull walks with them. Pits will not hold it.');
-  else if (run.season === 2) say('Dawn', 'Bright tracks show where the herd walked.');
-  else say(clean ? 'Dawn: not one got through' : 'Dawn', 'Build for the next herd.');
+  say(finalSeason(run) ? 'The last herd' : clean ? 'Dawn: not one got through' : 'Dawn', `Next: ${forecast()}. Bright tracks show where they walked.`);
   refresh();
 }
 
 function finish() {
+  closeMenu();
   $('end').hidden = false;
   if (run.over === 'won') {
     $('endTitle').textContent = 'The town holds';
@@ -842,7 +1038,7 @@ function release() {
   if (run.night) { paused = !paused; refresh(); return; }
   startNight(run);
   paused = false;
-  say(`Season ${run.season}`, `A herd of ${herdSize(run)}${finalSeason(run) ? ' and the Old Bull' : ''}`);
+  say(`Season ${run.season}`, `A herd of ${herdSize(run)} from the ${forecast()}`);
   beep(150, 0.7, 'sawtooth', 0.05, 110);
   refresh();
 }
@@ -858,56 +1054,116 @@ function refresh() {
   $('go').disabled = !!run.over;
   $('speed').textContent = `${speed}×`;
   $('sound').textContent = soundOn ? 'Sound on' : 'Sound off';
+  $('next').textContent = run.over ? '' : `${night ? 'Coming from' : 'Next herd'}: ${forecast()}`;
   document.querySelectorAll('#tools button').forEach((b) => {
     b.classList.toggle('on', b.dataset.tool === tool);
     b.classList.toggle('poor', run.money < DEFENCES[b.dataset.tool].cost);
   });
-  $('hint').textContent = tool ? HINTS[tool] : 'Pick something to build.';
+}
+
+function card(key) {
+  const b = document.createElement('button');
+  b.className = 'card';
+  b.dataset.tool = key;
+  b.innerHTML = `<img alt="" src="${THUMB[key]}"><b>${DEFENCES[key].name}<i>$${DEFENCES[key].cost}</i></b><small>${BLURBS[key]}</small>`;
+  return b;
 }
 
 function buildTools() {
   Object.keys(DEFENCES).forEach((key, i) => {
-    const b = document.createElement('button');
-    b.dataset.tool = key;
-    b.innerHTML = `${DEFENCES[key].name}<span class="cost">$${DEFENCES[key].cost}</span>`;
+    const b = card(key);
     b.title = `Key ${i + 1}`;
     b.onclick = () => choose(key);
     $('tools').appendChild(b);
   });
 }
 
-function choose(key) { tool = tool === key ? '' : key; hover = null; refresh(); }
+function choose(key) { tool = tool === key ? '' : key; hover = null; closeMenu(); refresh(); }
+
+function closeMenu() { menuSpot = null; preview = ''; $('menu').hidden = true; }
+
+function openMenu(s) {
+  const m = $('menu'), def = run.built[s.id];
+  menuSpot = s; preview = '';
+  m.innerHTML = '';
+  if (def) {
+    const head = document.createElement('div');
+    head.className = 'title'; head.textContent = DEFENCES[def.type].name;
+    const sellButton = document.createElement('button');
+    sellButton.textContent = `Sell for $${sellPrice(run, s.id)}`;
+    sellButton.onclick = () => {
+      addFloat(s.x, s.y, 20, `+$${sellPrice(run, s.id)}`, '#ffc766', 14);
+      sell(run, s.id);
+      beep(300, 0.08, 'triangle', 0.03);
+      closeMenu(); refresh();
+    };
+    m.append(head, sellButton);
+  } else {
+    const head = document.createElement('div');
+    head.className = 'title'; head.textContent = s.hill ? 'High ground: longer range' : s.kind === 'pad' ? 'Beside the road' : 'On the road';
+    m.appendChild(head);
+    for (const key of Object.keys(DEFENCES)) {
+      if (DEFENCES[key].spot !== s.kind) continue;
+      const b = card(key);
+      if (run.money < DEFENCES[key].cost) b.classList.add('poor');
+      b.onmouseenter = () => { preview = key; };
+      b.onmouseleave = () => { preview = ''; };
+      b.onclick = () => { build(s, key); };
+      m.appendChild(b);
+    }
+  }
+  m.hidden = false;
+  const p = project(s.x, s.h, s.y), w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = `${Math.min(Math.max(p.x - w / 2, 8), cam.w - w - 8)}px`;
+  m.style.top = `${p.y - h - 18 > 8 ? p.y - h - 18 : Math.min(p.y + 20, cam.h - h - 8)}px`;
+}
+
+function build(s, type) {
+  const why = place(run, type, s.id);
+  if (why === 'money') {
+    addFloat(s.x, s.y, 20, 'Not enough money', '#ff8d7a', 14);
+    nudge('moneyBox', 'short'); beep(140, 0.12, 'square', 0.025);
+  } else if (!why) {
+    rings.push({ x: s.x, z: s.y, age: 0, life: 0.35, r: 26, colour: AMBER });
+    addSparks(s.x, 2 + s.h, s.y, 12, DUST, 42, 0.35);
+    beep(200, 0.09, 'triangle', 0.06, 110);
+    closeMenu();
+  }
+  refresh();
+}
 
 // --- Drawing the scene ---
 function setLights() {
   const pos = [], col = [];
   const add = (x, y, z, r, c, power) => { if (pos.length < MAX_LIGHTS * 4) { pos.push(x, y, z, r); col.push(c[0] * power, c[1] * power, c[2] * power); } };
   add(GATE.x + 40, 46, GATE.y, 90, justHurt > 0 ? RED : AMBER, 0.2 + 0.4 * run.town / TUNE.town + (justHurt > 0 ? 0.8 : 0));
-  for (const id of Object.keys(run.built)) if (run.built[id].type === 'tower') add(SPOT[id].x - 6, 44, SPOT[id].y, 56, AMBER, 0.7);
   for (const f of flashes.slice(-3)) add(f.x, f.y, f.z, f.r, f.colour, 2 * (1 - f.age / f.life));
+  for (const id of Object.keys(run.built)) if (DEFENCES[run.built[id].type].reload) add(SPOT[id].x - 6, 44 + SPOT[id].h, SPOT[id].y, 56, AMBER, 0.7);
   gl.uniform4fv(U.uLP, new Float32Array(pos)); gl.uniform3fv(U.uLC, new Float32Array(col));
   gl.uniform1i(U.uLN, pos.length / 4);
 }
 
 function drawBeast(b, n, time) {
-  const p = placeOf(b), big = b.bull ? 2.4 : 1.3;
+  const p = placeOf(b), big = KINDS[b.kind].size;
   const hit = n.time - b.hitAt < 0.1;
-  const bob = Math.abs(Math.sin(time * 5.5 + b.id)) * 0.9;
+  const rate = KINDS[b.kind].speed;
+  const bob = Math.abs(Math.sin(time * 5.5 * rate + b.id)) * 0.9;
   flat(MESH.disc, p.x, p.y, 0.5, 15 * big, [0, 0, 0, 0.35], 9 * big);
   const body = chain(T(p.x, bob, p.y), Ry(-p.a), S(big));
-  const tint = hit ? [1, 1, 1, 1] : b.bull ? [1.35, 0.72, 0.6, 1] : [1, 1, 1, 1];
+  const tint = hit ? [1, 1, 1, 1] : TINTS[b.kind];
   draw3(MESH.beast, body, tint, hit ? 0.9 : 0.35);
+  if (KINDS[b.kind].pitProof) draw3(MESH.plates, body, hit ? [1, 1, 1, 1] : [1, 1, 1, 1], 0.3);
   [[7, 4.6, 0], [7, -4.6, 3.1], [-7, 4.6, 3.1], [-7, -4.6, 0]].forEach(([lx, lz, phase]) => {
-    draw3(MESH.leg, chain(body, T(lx, 8, lz), Rz(Math.sin(time * 11 + b.id * 1.7 + phase) * 0.55)), tint, hit ? 0.9 : 0);
+    draw3(MESH.leg, chain(body, T(lx, 8, lz), Rz(Math.sin(time * 11 * rate + b.id * 1.7 + phase) * 0.55)), tint, hit ? 0.9 : 0);
   });
 }
 
 function drawBody(k, dt) {
   k.age += dt;
   const t = Math.min(k.age / k.life, 1), base = T(k.x, 0, k.z);
-  const tint = k.bull ? [1.35, 0.72, 0.6, 1] : [0.8, 0.8, 0.8, 1];
+  const c = TINTS[k.beast], tint = [c[0] * 0.8, c[1] * 0.8, c[2] * 0.8, 1];
   if (k.how === 'pit') {
-    draw3(MESH.beast, chain(base, T(0, -t * 22, 0), Ry(-k.a), Rz(-t * 0.9), S(1 - t * 0.4)), tint);
+    draw3(MESH.beast, chain(base, T(0, -t * 22, 0), Ry(-k.a), Rz(-t * 0.9), S(k.big * (1 - t * 0.4))), tint);
   } else {
     const fall = Math.min(t * 3.5, 1), sink = Math.max(t - 0.6, 0) * 2.5;
     draw3(MESH.beast, chain(base, T(0, -sink * 16, 0), Ry(-k.a), Rx(fall * 1.45), S(k.big)), tint);
@@ -915,13 +1171,18 @@ function drawBody(k, dt) {
 }
 
 function drawDefence(s, def, night, alpha) {
-  const tint = [1, 1, 1, alpha];
+  const tint = [1, 1, 1, alpha], y = s.h || 0;
+  const since = night && night.time >= def.fired ? night.time - def.fired : 9;
   if (def.type === 'tower') {
-    const since = night && night.time >= def.fired ? night.time - def.fired : 9;
     const back = since < 0.14 ? 3.5 * (1 - since / 0.14) : 0;
-    draw3(MESH.tower, T(s.x, 0, s.y), tint);
-    draw3(MESH.bow, chain(T(s.x, 30, s.y), Ry(-def.aim), T(-back, 0, 0)), tint);
-    draw3(MESH.lamp, T(s.x - 7.5, 39, s.y), since < 0.1 ? [1.5, 1.5, 1.5, alpha] : tint, 1);
+    draw3(MESH.tower, T(s.x, y, s.y), tint);
+    draw3(MESH.bow, chain(T(s.x, y + 30, s.y), Ry(-def.aim), T(-back, 0, 0)), tint);
+    draw3(MESH.lamp, T(s.x - 7.5, y + 39, s.y), since < 0.1 ? [1.5, 1.5, 1.5, alpha] : tint, 1);
+  } else if (def.type === 'mortar') {
+    const kick = since < 0.25 ? 3 * (1 - since / 0.25) : 0;
+    draw3(MESH.mortar, T(s.x, y, s.y), tint);
+    draw3(MESH.barrel, chain(T(s.x, y + 9 - kick, s.y), Ry(-def.aim), Rz(-0.55), S(1.15)), tint);
+    draw3(MESH.lamp, T(s.x - 8, y + 16, s.y + 6), since < 0.2 ? [1.5, 1.5, 1.5, alpha] : tint, 1);
   } else if (def.type === 'pit') {
     flat(MESH.pitHole, s.x, s.y, 0.7, 13, [1, 1, 1, alpha], 9.5);
     draw3(MESH.pit, T(s.x, 0, s.y), def.left > 0 ? tint : [0.45, 0.45, 0.45, alpha]);
@@ -933,10 +1194,11 @@ function drawDefence(s, def, night, alpha) {
   }
 }
 
-function rangeDisc(s, c) {
+function rangeDisc(s, type, c) {
+  const r = rangeOf(s, type);
   gl.disable(gl.DEPTH_TEST);
-  flat(MESH.disc, s.x, s.y, 1, DEFENCES.tower.range, [...c, 0.13]);
-  flat(MESH.ring, s.x, s.y, 1, DEFENCES.tower.range, [...c, 0.5]);
+  flat(MESH.disc, s.x, s.y, 1, r, [...c, 0.13]);
+  flat(MESH.ring, s.x, s.y, 1, r, [...c, 0.5]);
   gl.enable(gl.DEPTH_TEST);
 }
 
@@ -970,9 +1232,15 @@ function drawScene(dt, time) {
   const pulse = 0.55 + Math.sin(time * 4) * 0.3;
   for (const s of SPOTS) {
     if (run.built[s.id]) continue;
-    const wanted = tool && DEFENCES[tool].spot === s.kind;
-    if (!wanted && s.kind === 'road') continue;
-    flat(MESH.ring, s.x, s.y, 0.9, s.kind === 'pad' ? 13 : 11, [1, 0.66, 0.25, wanted ? pulse : 0.22]);
+    if (tool && DEFENCES[tool].spot !== s.kind) continue;
+    const hot = s === menuSpot ? 1 : tool ? pulse : s.kind === 'pad' ? 0.6 : 0.34;
+    flat(MESH.ring, s.x, s.y, s.h + 0.9, s.hill ? 17 : s.kind === 'pad' ? 13 : 11, s.hill ? [1, 0.86, 0.45, hot] : [1, 0.66, 0.25, hot]);
+  }
+  if (!run.night || run.night.queue.length) {
+    for (const way of run.plan.ways) {
+      const at = NODES[way];
+      draw3(MESH.beacon, T(at.x, 0, at.y), [1, 0.3, 0.25, 0.3 + 0.2 * Math.sin(time * 5)], 1);
+    }
   }
 
   for (const id of Object.keys(run.built)) drawDefence(SPOT[id], run.built[id], n, 1);
@@ -982,17 +1250,28 @@ function drawScene(dt, time) {
 
   if (n) for (const s of n.shots) {
     const p = placeOf(s.target), far = Math.hypot(p.x - s.x, p.y - s.y);
-    const h = 11 + 19 * Math.min(far / 70, 1);
+    const h = 11 + (s.h0 - 11) * Math.min(far / 70, 1);
     draw3(MESH.shot, chain(T(s.x, h, s.y), Ry(-s.a), S(2.2, 2.6, 2.6)), [1, 0.95, 0.75, 1], 1);
     sparks.push({ x: s.x, y: h, z: s.y, vx: 0, vy: 0, vz: 0, age: 0, life: 0.28, colour: AMBER, size: 10 });
   }
 
-  // Range preview for a tower being placed or looked at.
-  if (hover && !run.built[hover.id] && tool) {
-    const ok = run.money >= DEFENCES[tool].cost;
-    if (tool === 'tower') rangeDisc(hover, ok ? AMBER : RED);
-    drawDefence(hover, { type: tool, left: DEFENCES[tool].holds || 0, aim: -Math.PI / 2, fired: -9 }, null, ok ? 0.75 : 0.35);
-  } else if (hover && run.built[hover.id] && run.built[hover.id].type === 'tower') rangeDisc(hover, AMBER);
+  if (n) for (const p of n.pots) {
+    const x = p.x0 + (p.x - p.x0) * p.t, z = p.y0 + (p.y - p.y0) * p.t, y = p.h0 * (1 - p.t) + 150 * p.t * (1 - p.t);
+    draw3(MESH.pot, chain(T(x, y, z), S(1.3)), [1, 1, 1, 1], 1);
+    sparks.push({ x, y, z, vx: 0, vy: 0, vz: 0, age: 0, life: 0.3, colour: AMBER, size: 8 });
+    flat(MESH.ring, p.x, p.y, 1, DEFENCES.mortar.splash * (0.4 + 0.6 * p.t), [1, 0.35, 0.25, 0.5]);
+  }
+
+  // Preview: what you are about to build, and how far it reaches.
+  const ghost = menuSpot ? (run.built[menuSpot.id] ? null : menuSpot) : hover && !run.built[hover.id] ? hover : null;
+  const ghostType = menuSpot ? preview : tool;
+  if (ghost && ghostType) {
+    const ok = run.money >= DEFENCES[ghostType].cost;
+    if (DEFENCES[ghostType].range) rangeDisc(ghost, ghostType, ok ? AMBER : RED);
+    drawDefence(ghost, { type: ghostType, left: DEFENCES[ghostType].holds || 0, aim: -Math.PI / 2, fired: -9 }, null, ok ? 0.75 : 0.35);
+  }
+  const looked = menuSpot || hover;
+  if (looked && run.built[looked.id] && DEFENCES[run.built[looked.id].type].range) rangeDisc(looked, run.built[looked.id].type, AMBER);
 
   for (const r of rings) {
     r.age += dt;
@@ -1031,14 +1310,18 @@ function drawOverlay(dt) {
   ctx.clearRect(0, 0, w, h);
   const n = run.night, unit = Math.min(Math.max(Math.min(h / 520, w / 800), 0.8), 1.5);
 
-  const neck = project(NECK.x + 18, 22, NECK.y - 8);
-  ctx.fillStyle = '#c4cdcb'; ctx.font = `600 ${12 * unit}px system-ui, sans-serif`; ctx.textAlign = 'left';
-  ctx.fillText('THE NECK', neck.x, neck.y);
+  ctx.textAlign = 'center';
+  ctx.font = `700 ${13 * unit}px system-ui, sans-serif`; ctx.lineWidth = 3; ctx.strokeStyle = '#0a0f12'; ctx.fillStyle = '#ffb4a6';
+  for (const way of run.plan.ways) {
+    const at = project(NODES[way].x + (way === 'west' ? 26 : 0), 62, NODES[way].y);
+    ctx.strokeText(ENTRANCES[way], at.x, at.y); ctx.fillText(ENTRANCES[way], at.x, at.y);
+  }
+  ctx.textAlign = 'left';
 
   if (n) for (const b of n.beasts) {
     if (b.dead || b.health >= b.full) continue;
-    const p = placeOf(b), big = b.bull ? 2.4 : 1.3, at = project(p.x, 25 * big, p.y);
-    const bw = (b.bull ? 56 : 26) * unit, share = Math.max(b.health / b.full, 0);
+    const p = placeOf(b), big = KINDS[b.kind].size, at = project(p.x, 22 * big, p.y);
+    const bw = (b.kind === 'bull' ? 56 : 26) * unit, share = Math.max(b.health / b.full, 0);
     ctx.fillStyle = '#0a0f12'; ctx.fillRect(at.x - bw / 2 - 1, at.y - 1, bw + 2, 6);
     ctx.fillStyle = share > 0.5 ? '#7fc28f' : share > 0.25 ? '#e8c35a' : '#e0715f';
     ctx.fillRect(at.x - bw / 2, at.y, bw * share, 4);
@@ -1104,21 +1387,9 @@ overlay.addEventListener('mouseleave', () => { hover = null; });
 overlay.addEventListener('click', (e) => {
   if (run.over) return;
   const s = spotAt(e);
-  if (!s) return;
-  if (run.built[s.id]) {
-    if (takeBack(run, s.id)) { addFloat(s.x, s.y, 20, 'Taken back', '#c4cdcb', 13); beep(300, 0.08, 'triangle', 0.03); refresh(); }
-    return;
-  }
-  const why = tool ? place(run, tool, s.id) : 'spot';
-  if (why === 'money') {
-    addFloat(s.x, s.y, 20, 'Not enough money', '#ff8d7a', 14);
-    nudge('moneyBox', 'short'); beep(140, 0.12, 'square', 0.025);
-  } else if (!why) {
-    rings.push({ x: s.x, z: s.y, age: 0, life: 0.35, r: 26, colour: AMBER });
-    addSparks(s.x, 2, s.y, 12, DUST, 42, 0.35);
-    beep(200, 0.09, 'triangle', 0.06, 110);
-  }
-  refresh();
+  if (!s) { closeMenu(); return; }
+  if (tool && !run.built[s.id]) { build(s, tool); return; }
+  if (menuSpot === s) closeMenu(); else openMenu(s);
 });
 $('go').onclick = release;
 $('speed').onclick = () => { speed = speed === 1 ? 2 : 1; refresh(); };
@@ -1128,7 +1399,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { e.preventDefault(); if (!run.over) release(); }
   const key = Object.keys(DEFENCES)[Number(e.key) - 1];
   if (key) choose(key);
-  if (e.key === 'Escape') { tool = ''; hover = null; refresh(); }
+  if (e.key === 'Escape') { tool = ''; hover = null; closeMenu(); refresh(); }
 });
 
 const TICK = 1 / 60;
@@ -1171,6 +1442,7 @@ if (!gl) {
   gl.bindVertexArray(MESH.sparkVao);
   gl.bindBuffer(gl.ARRAY_BUFFER, MESH.sparkBuffer);
   [0, 1, 2].forEach((i) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 36, i * 12); });
+  makeThumbs();
   buildTools();
   start();
   requestAnimationFrame((t) => { last = t; frame(t); });

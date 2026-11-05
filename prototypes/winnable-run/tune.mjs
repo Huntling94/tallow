@@ -4,22 +4,33 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
 const rules = html.slice(html.indexOf('// RULES-START'), html.indexOf('// RULES-END'));
-const api = new Function(`${rules}; return { TUNE, DEFENCES, ROADS, SPOTS, newRun, place, startNight, stepNight, nextSeason, oddsOf };`)();
-const { TUNE, DEFENCES, ROADS, SPOTS, newRun, place, startNight, stepNight, nextSeason, oddsOf } = api;
+const api = new Function(`${rules}; return { TUNE, DEFENCES, ROADS, SPOTS, SPOT, OUT, newRun, place, startNight, stepNight, nextSeason, oddsAt };`)();
+const { TUNE, DEFENCES, ROADS, SPOTS, SPOT, OUT, newRun, place, startNight, stepNight, nextSeason, oddsAt } = api;
 
 const PADS = SPOTS.filter((s) => s.kind === 'pad');
 const MARKS = SPOTS.filter((s) => s.kind === 'road');
-const free = (run, list) => list.filter((s) => !run.built[s.id]).sort((a, b) => (b.reach.length - a.reach.length));
+const free = (run, list) => list.filter((s) => !run.built[s.id]);
+const FLOW_ORDER = ['west', 'north', 'south', 'a', 'c', 'b', 'd', 'f', 'e', 'm'];
 
-// Share of the herd a spot can touch at today's odds.
-function traffic(run, spot) {
-  const odds = oddsOf(run);
-  return spot.reach.reduce((sum, r) => sum + odds[r], 0);
+// Share of the coming herd expected on each road at today's odds.
+function traffic(run) {
+  const at = { west: 0, north: 0, south: 0, a: 0, b: 0, c: 0, d: 0, e: 0, f: 0, m: 0 };
+  for (const way of run.plan.ways) at[way] = 1 / run.plan.ways.length;
+  const roads = ROADS.map(() => 0);
+  for (const node of FLOW_ORDER) {
+    const odds = oddsAt(run, node, 1);
+    OUT[node].forEach((r, i) => { roads[r] = at[node] * odds[i]; at[ROADS[r].to] += roads[r]; });
+  }
+  return roads;
 }
 
-function busiest(run, list) {
-  return free(run, list).sort((a, b) => traffic(run, b) - traffic(run, a))[0];
+function busiest(run, list, type) {
+  const roads = traffic(run);
+  const score = (s) => s.reach[type].reduce((sum, r) => sum + (ROADS[r].fixed ? 0 : roads[r]), 0);
+  return free(run, list).sort((a, b) => score(b) - score(a))[0];
 }
+
+function count(run, type) { return Object.values(run.built).filter((d) => d.type === type).length; }
 
 const PLAYERS = {
   // Builds nothing.
@@ -27,37 +38,36 @@ const PLAYERS = {
   // Buys whatever it can afford, anywhere.
   careless(run) {
     for (let tries = 0; tries < 16; tries++) {
-      const type = Object.keys(DEFENCES)[Math.floor(run.rng() * 3)];
+      const type = Object.keys(DEFENCES)[Math.floor(run.rng() * 4)];
       const list = DEFENCES[type].spot === 'pad' ? PADS : MARKS;
-      const spot = list[Math.floor(run.rng() * list.length)];
-      place(run, type, spot.id);
+      place(run, type, list[Math.floor(run.rng() * list.length)].id);
     }
   },
   // A first-timer who has learned the basics: towers where the herd walks,
-  // spare money on pits, never a fence.
+  // the odd mortar, spare money on pits, never a fence.
   sensible(run) {
     for (;;) {
-      const pad = busiest(run, PADS);
-      if (pad && !place(run, 'tower', pad.id)) continue;
-      const mark = busiest(run, MARKS);
-      if (mark && !place(run, 'pit', mark.id)) continue;
+      const type = count(run, 'tower') >= (count(run, 'mortar') + 1) * 4 ? 'mortar' : 'tower';
+      const pad = busiest(run, PADS, type);
+      if (pad && !place(run, type, pad.id)) continue;
+      const mark = busiest(run, MARKS, 'pit');
+      if (mark && run.money < DEFENCES.tower.cost && !place(run, 'pit', mark.id)) continue;
       return;
     }
   },
-  // Steers: fences the outer roads so the herd walks past every tower on the middle road.
+  // Steers: fences the two outer roads so every herd funnels through the middle, then guns the hub.
   steerer(run) {
-    const count = (type) => Object.values(run.built).filter((d) => d.type === type).length;
+    const hub = [4, 7, 8, 10, 11, 12];
+    const worth = (s, type) => s.reach[type].filter((r) => hub.includes(r)).length;
     for (;;) {
-      const fencesWanted = Math.min(Math.ceil(count('tower') * 0.6), 3) * 2;
-      if (count('fence') < fencesWanted) {
-        const r = count('fence') % 2 ? 2 : 0;
-        const s = free(run, MARKS).find((m) => m.road === r);
-        if (s && !place(run, 'fence', s.id)) continue;
+      if (count(run, 'tower') >= 2) {
+        for (const s of free(run, MARKS)) if (s.road === 6 || s.road === 9) place(run, 'fence', s.id);
       }
-      const pad = free(run, PADS).find((s) => s.reach.includes(1));
-      if (pad && !place(run, 'tower', pad.id)) continue;
-      const mark = free(run, MARKS).find((s) => s.road === 1);
-      if (mark && !place(run, 'pit', mark.id)) continue;
+      const type = count(run, 'tower') >= (count(run, 'mortar') + 1) * 4 ? 'mortar' : 'tower';
+      const pad = free(run, PADS).sort((a, b) => worth(b, type) - worth(a, type))[0];
+      if (pad && !place(run, type, pad.id)) continue;
+      const mark = free(run, MARKS).find((s) => hub.includes(s.road));
+      if (mark && run.money < DEFENCES.tower.cost && !place(run, 'pit', mark.id)) continue;
       return;
     }
   },
@@ -93,15 +103,15 @@ function report() {
 }
 
 if (process.env.SWEEP) {
-  const base = { ...TUNE }, reload = DEFENCES.tower.reload;
+  const base = { ...TUNE }, towerScare = DEFENCES.tower.scare, mortarScare = DEFENCES.mortar.scare, fenceScare = DEFENCES.fence.scare;
   for (const set of JSON.parse(process.env.SWEEP)) {
     Object.assign(TUNE, base, set);
-    DEFENCES.tower.reload = set.reload || reload;
+    DEFENCES.tower.scare = set.towerScare ?? towerScare;
+    DEFENCES.mortar.scare = set.mortarScare ?? mortarScare;
+    DEFENCES.fence.scare = set.fenceScare ?? fenceScare;
     console.log(JSON.stringify(set), report());
   }
 } else {
   console.log(report());
-  console.log('road lengths', ROADS.map((r) => r.len.toFixed(0)).join(' '));
-  console.log('default odds', oddsOf(newRun(1)).map((o) => o.toFixed(2)).join(' '));
-  console.log('pads reach', PADS.map((s) => s.reach.join('')).join(' '));
+  console.log('pads reach', PADS.map((s) => s.reach.tower.length).join(' '));
 }
