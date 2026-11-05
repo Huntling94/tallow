@@ -21,7 +21,7 @@ Standards are enforced by tools wherever possible. Where a tool does not exist y
   - No global randomness (`randi()`, `randf()`, `shuffle()`, `pick_random()`). Random generators are created only by the random-streams code, each seeded from the run seed; everything else uses the generator it is given.
   - Same seed and inputs give the same outputs, on every platform.
   - Emit telemetry events through the telemetry interface; never write files directly.
-- **Presentation code (`game/src/world/`, `game/src/camera/`, `game/src/player/`, `game/src/ui/`)** reads simulation state and sends commands; it never changes simulation state directly.
+- **Presentation code (`game/src/world/`, `game/src/camera/`, `game/src/player/`, `game/src/ui/`, `game/src/viewer/`)** reads simulation state and sends commands; it never changes simulation state directly.
 - Signals for events flowing up; method calls for commands flowing down.
 
 ## Python (analysis)

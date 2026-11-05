@@ -58,3 +58,13 @@ offset_right = 400.0
 offset_bottom = 40.0
 modulate = Color(1, 1, 1, 0.55)
 text = "Tallow, grey box. R or click to replay."
+
+[node name="ViewerButton" type="Button" parent="."]
+offset_left = 16.0
+offset_top = 44.0
+offset_right = 136.0
+offset_bottom = 75.0
+focus_mode = 0
+text = "Season viewer"
+
+[connection signal="pressed" from="ViewerButton" to="." method="open_viewer"]
