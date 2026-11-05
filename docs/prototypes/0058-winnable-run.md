@@ -14,7 +14,8 @@ The prototype code is not promoted. Whatever is kept is rebuilt through the full
 - That is not what ended up being tested. The maintainer found the first build too complex and short on feedback, so the prototype was rebuilt twice.
 - Signal fires, the night action in the issue, were cut. Building during a herd took their place.
 - The question it answered in the end: does a season work as a 3D tower defence in which beasts choose their own roads? Yes.
-- The issue's second keep test, that seasons 2 to 5 feel like decisions, was not asked separately. The maintainer's answer covers the build as a whole.
+- The five-route valley also went, replaced by a new road network. The score became the town and money left, shown on the win screen.
+- The issue's two keep tests still apply: wanting another run, and seasons 2 to 5 feeling like decisions. The maintainer's answer to each is recorded under the verdict.
 
 ## What was built
 
@@ -24,14 +25,14 @@ Three builds, each playable:
 |---|---|---|
 | 1 | Five-route map with bands of beasts, odds on screen, signal fires | Too complex, too little feedback |
 | 2 | 3D tower defence on three roads, with each beast its own unit and visible shots | Getting there; wanted more route strategy, a better build menu and more entrances |
-| 3 | Eleven roads, three entrances, beast types, mortar, hills, build menu with selling | Keep |
+| 3 | Sixteen roads with twelve to choose from, three entrances, beast types, mortar, hills, build menu with selling | Keep |
 
 ## What worked
 
 - **Each beast as its own unit.** Spacing them out made every fight readable. Bands moved as one marker gave nothing to watch.
 - **Visible cause and effect.** Shots, health bars, kills, floating rewards and breaches replaced the dice roll, the event log and the odds panel.
 - **Hiding the odds.** Steering survives without numbers. The player reads it from where beasts walk and from the bright tracks left behind.
-- **Entrances with a warning.** A changing start point adds a new question each season, and the warning makes it a decision rather than a surprise.
+- **Entrances with a warning.** A changing start point adds a new question each season, and the warning gives the player time to answer it.
 - **Counters instead of panels.** Runners ignore fences and ironhides ignore pits. That adds variety without adding a number to the screen.
 - **A menu on the ring.** Building where you are looking, with a preview of range before paying, is much clearer than arming a tool first.
 
@@ -43,20 +44,23 @@ Win rates over 2,000 runs of `tune.mjs`, using scripted players:
 |---|---|
 | Builds nothing | 0% |
 | Careless | 6% |
-| Sensible: guns where the herd walks, no fences | 83% |
-| Funnels herds with fences | 92% |
+| Sensible: guns where the herd walks, no fences | 89% |
+| Funnels herds with fences | 88% |
 
-These are bots with perfect knowledge of the odds, so they say more about the rules than about how a person plays. No person's win rate was measured.
+The sensible bot reads the hidden odds, which a person cannot, and the funnelling bot follows one fixed plan. They say more about the rules than about how a person plays. No person's win rate was measured, and no bot builds or sells during a herd.
 
-Steering only pays under certain conditions. Three findings matter for the real game:
+Steering is the design's core idea, and these rates do not yet show it paying. Four findings matter for the real game:
 
 1. **Steering must be stronger than shooting's side effect.** With towers scary enough to matter, stacked scare drove herds off the defended roads and the funnelling bot won 0% of runs. Towers now scare a third as much, and fences do the steering.
 2. **Firepower has to be scarce.** With a tower reaching two roads, or money for every pad, plain spreading beat steering. One road per tower and tight money reversed that on the earlier map.
 3. **Stretches every beast must walk defeat steering.** Build spots stay out of reach of the last stretch and the fork areas of the early maps. This is the same problem as #46.
+4. **Beasts that ignore steering cost it its edge.** The build the maintainer played had a bug: runners were meant to ignore fences, but were still slowed and partly turned by them. Funnelling led sensible play 92% to 83% there, measured at a coarser time step. With runners really ignoring fences, the two are level. The funnelling bot is crude, so this shows steering is not yet proven, not that it is worthless.
 
 ## What is not proven
 
-- Whether the fun lasts past a few runs. Tuned run length is about five seasons, with no longer game around it.
+- Whether the fun lasts past a few runs. A run is five seasons, with no longer game around it.
+- Whether steering is worth doing, given finding 4 above.
+- Whether building during a herd, which replaced the night action, adds anything. The bots never do it.
 - Harvest, trade, the exchange and walking the town. None of them are in this prototype.
 - Sound was built but never checked by ear during development.
 - Season length and difficulty at real play. Only the maintainer has played it, and there is no playtest data.

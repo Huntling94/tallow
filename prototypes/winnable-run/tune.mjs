@@ -18,7 +18,7 @@ function traffic(run) {
   for (const way of run.plan.ways) at[way] = 1 / run.plan.ways.length;
   const roads = ROADS.map(() => 0);
   for (const node of FLOW_ORDER) {
-    const odds = oddsAt(run, node, 1);
+    const odds = oddsAt(run, node, 'common');
     OUT[node].forEach((r, i) => { roads[r] = at[node] * odds[i]; at[ROADS[r].to] += roads[r]; });
   }
   return roads;
@@ -78,14 +78,14 @@ function play(seed, player) {
   for (;;) {
     player(run);
     startNight(run);
-    while (!run.night.done) stepNight(run, 1 / 30);
+    while (!run.night.done) stepNight(run, 1 / 60);
     if (run.over) break;
     nextSeason(run);
   }
   return { won: run.over === 'won', town: run.town, season: run.season };
 }
 
-const RUNS = Number(process.env.RUNS || 1000);
+const RUNS = Number(process.env.RUNS || 2000);
 
 function report() {
   const parts = [];

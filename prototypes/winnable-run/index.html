@@ -95,7 +95,7 @@ const TUNE = {
 
 const KINDS = {
   common: { name: 'Beasts', health: 1, speed: 1, shy: 1, harm: 1, reward: 1, pitProof: false, size: 1.3 },
-  runner: { name: 'Runners', health: 0.5, speed: 1.6, shy: 0.2, harm: 1, reward: 1, pitProof: false, size: 0.95 },
+  runner: { name: 'Runners', health: 0.5, speed: 1.6, shy: 0.2, harm: 1, reward: 1, pitProof: false, fenceProof: true, size: 0.95 },
   ironhide: { name: 'Ironhides', health: 2, speed: 0.75, shy: 1, harm: 2, reward: 2, pitProof: true, size: 1.6 },
   bull: { name: 'The Old Bull', health: 5, speed: 0.6, shy: 0.5, harm: 5, reward: 6, pitProof: true, size: 2.4 },
 };
@@ -117,7 +117,7 @@ const NODES = {
 };
 const ENTRANCES = { west: 'West', north: 'North', south: 'South' };
 const NEAREST_TOWN_FIRST = ['gate', 'm', 'e', 'f', 'd', 'b', 'c', 'a', 'west', 'north', 'south'];
-const NECK = NODES.west, GATE = NODES.gate;
+const GATE = NODES.gate;
 
 function curve(p) {
   const out = [];
@@ -259,10 +259,11 @@ function newRun(seed) {
   return run;
 }
 
-function scares(run) {
+function scares(run, fenceProof) {
   const out = ROADS.map(() => 0);
   for (const id of Object.keys(run.built)) {
     const type = run.built[id].type;
+    if (type === 'fence' && fenceProof) continue;
     for (const r of SPOT[id].reach[type]) out[r] += DEFENCES[type].scare;
   }
   return out;
@@ -270,8 +271,9 @@ function scares(run) {
 
 // The odds are never shown: the player reads them from where the beasts walk.
 // At a fork a beast weighs each road by the whole way from there to the town.
-function oddsAt(run, node, shy) {
-  const scare = scares(run), cost = { gate: 0 };
+function oddsAt(run, node, kind) {
+  const { shy, fenceProof } = KINDS[kind];
+  const scare = scares(run, fenceProof), cost = { gate: 0 };
   const stepCost = (r) => ROADS[r].len * TUNE.lengthShy + scare[r] * shy + (ROADS[r].shallows ? 0.5 : 0) + cost[ROADS[r].to];
   for (const n of NEAREST_TOWN_FIRST) if (n !== 'gate') cost[n] = Math.min(...OUT[n].map(stepCost));
   const us = OUT[node].map((r) => -stepCost(r));
@@ -339,7 +341,7 @@ function paceOf(run, b) {
   if (road.shallows && b.d > road.len * 0.3 && b.d < road.len * 0.7) pace *= TUNE.shallowsSlow;
   for (const id of Object.keys(run.built)) {
     const s = SPOT[id];
-    if (run.built[id].type === 'fence' && s.road === b.road && Math.abs(s.d - b.d) < TUNE.fenceReach) pace *= TUNE.fenceSlow;
+    if (run.built[id].type === 'fence' && !KINDS[b.kind].fenceProof && s.road === b.road && Math.abs(s.d - b.d) < TUNE.fenceReach) pace *= TUNE.fenceSlow;
   }
   return pace;
 }
@@ -369,7 +371,7 @@ function moveBeast(run, b, dt) {
       return;
     }
     b.d -= road.len;
-    b.road = OUT[road.to][pick(oddsAt(run, road.to, kind.shy), run.rng)];
+    b.road = OUT[road.to][pick(oddsAt(run, road.to, b.kind), run.rng)];
     n.walked[b.road] += 1;
   }
 }
@@ -1024,7 +1026,7 @@ function finish() {
   $('end').hidden = false;
   if (run.over === 'won') {
     $('endTitle').textContent = 'The town holds';
-    $('endBody').textContent = `Five herds beaten with ${run.town} of ${TUNE.town} town left.`;
+    $('endBody').textContent = `Five herds beaten with ${run.town} of ${TUNE.town} town and $${run.money} left.`;
     beep(523, 0.5, 'triangle', 0.06);
   } else {
     $('endTitle').textContent = 'The town falls';
@@ -1035,6 +1037,7 @@ function finish() {
 }
 
 function release() {
+  closeMenu();
   if (run.night) { paused = !paused; refresh(); return; }
   startNight(run);
   paused = false;
@@ -1152,7 +1155,7 @@ function drawBeast(b, n, time) {
   const body = chain(T(p.x, bob, p.y), Ry(-p.a), S(big));
   const tint = hit ? [1, 1, 1, 1] : TINTS[b.kind];
   draw3(MESH.beast, body, tint, hit ? 0.9 : 0.35);
-  if (KINDS[b.kind].pitProof) draw3(MESH.plates, body, hit ? [1, 1, 1, 1] : [1, 1, 1, 1], 0.3);
+  if (KINDS[b.kind].pitProof) draw3(MESH.plates, body, [1, 1, 1, 1], 0.3);
   [[7, 4.6, 0], [7, -4.6, 3.1], [-7, 4.6, 3.1], [-7, -4.6, 0]].forEach(([lx, lz, phase]) => {
     draw3(MESH.leg, chain(body, T(lx, 8, lz), Rz(Math.sin(time * 11 * rate + b.id * 1.7 + phase) * 0.55)), tint, hit ? 0.9 : 0);
   });
@@ -1422,6 +1425,7 @@ function frame(now) {
   }
   $('townText').textContent = run.town;
   $('townBar').style.width = `${run.town / TUNE.town * 100}%`;
+  $('townBar').style.background = run.town / TUNE.town > 0.3 ? 'var(--good)' : 'var(--danger)';
   draw(dt, now / 1000);
   requestAnimationFrame(frame);
 }
@@ -1446,6 +1450,7 @@ if (!gl) {
   buildTools();
   start();
   requestAnimationFrame((t) => { last = t; frame(t); });
+  // A hook for scripted checks in the browser.
   window.__game = { get run() { return run; }, setSpeed(x) { speed = x; } };
 }
 </script>

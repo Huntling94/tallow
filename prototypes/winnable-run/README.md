@@ -18,4 +18,4 @@ A small 3D tower defence. Open `index.html` in a browser that supports WebGL2. I
 node prototypes/winnable-run/tune.mjs
 ```
 
-Win rates over 2,000 runs: building nothing 0%, careless 6%, sensible (guns where the herd walks, no fences) 83%, funnelling with fences 92%.
+Win rates over 2,000 runs: building nothing 0%, careless 6%, sensible (guns where the herd walks, no fences) 89%, funnelling with fences 88%.
