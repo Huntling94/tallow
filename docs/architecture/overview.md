@@ -100,7 +100,7 @@ The game client and the headless runner share the same simulation code ([ADR-000
 flowchart TB
     data[("<b>Game data</b><br/>[Data store: versioned JSON]<br/>Balance tables, true parameters,<br/>fitted coefficients")]
 
-    subgraph pres["Presentation (game/src/world, camera, player, ui)"]
+    subgraph pres["Presentation (game/src/world, camera, player, ui, viewer)"]
         input["<b>Input and UI</b><br/>[Component: GDScript, Godot UI]<br/>Turns player actions into commands"]
         world["<b>World view</b><br/>[Component: GDScript, Godot 3D]<br/>Draws herds, defences and town;<br/>animates between ticks"]
         camera["<b>Cameras</b><br/>[Component: GDScript, Godot 3D]<br/>Command view and first person"]
@@ -254,7 +254,7 @@ Because the simulation knows the truth, every model in the repository can be che
 | Layer | Where | Does | Never does |
 |---|---|---|---|
 | Simulation | `game/src/sim/` | Owns every game rule and all game state. Advances in fixed ticks from commands and a seed. Emits events. | Touch scenes, nodes, rendering, input, files or the wall clock. Use unseeded randomness. |
-| Presentation | `game/src/world/`, `camera/`, `player/`, `ui/` | Shows simulation state in 3D, animates between ticks, turns player input into commands. | Change simulation state directly. |
+| Presentation | `game/src/world/`, `camera/`, `player/`, `ui/`, `viewer/` | Shows simulation state in 3D (and in the top-down 2D viewer, which replays a run it plays itself), animates between ticks, turns player input into commands. | Change simulation state directly. |
 | Headless runner | `game/tools/` | Runs seeded seasons with bots and no window. | Contain rules of its own. |
 | Data loader | `game/src/data/` | Reads game data files and passes the values to the simulation at the start of a run. | Hold or change game state. |
 | Telemetry writer | `game/src/telemetry/` | Turns simulation events into JSON Lines files. | Decide what happens in the game. |
@@ -270,6 +270,7 @@ game/                    Godot 4 project
   src/camera/            command view and first person
   src/player/            first-person controller and harpoon
   src/ui/                menus, HUD and theme
+  src/viewer/            top-down 2D replay of a season
   src/telemetry/         telemetry writer
   src/data/              data loader: reads game/data/ and passes values to the simulation
   scenes/                Godot scenes

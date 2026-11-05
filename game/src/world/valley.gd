@@ -7,6 +7,8 @@ extends Node3D
 ## The valley runs along the z axis: the herd enters at the far end (-z),
 ## the town sits near the other end (+z), and the sun sets behind the herd.
 
+const VIEWER_SCENE := "res://scenes/season_viewer.tscn"
+
 const SIZE_X := 720.0
 const Z_FAR := -560.0
 const Z_NEAR := 200.0
@@ -73,6 +75,11 @@ func _process(_delta: float) -> void:
 		var beast := _beasts[index]
 		beast.position.z = _beast_starts[index] + walked
 		beast.position.y = height_at(beast.position.x, beast.position.z)
+
+
+## Opens the top-down season viewer (spec 0043).
+func open_viewer() -> void:
+	get_tree().change_scene_to_file(VIEWER_SCENE)
 
 
 ## How far lamp `index` of `count` has come on, from 0 to 1, `time` seconds
