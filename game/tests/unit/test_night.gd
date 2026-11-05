@@ -25,7 +25,7 @@ func test_a_pit_kills_no_more_than_its_capacity_in_a_night() -> void:
 			_band(1, 6, "cairn_pass"), _band(2, 6, "split_ridge"), _band(3, 6, "low_ford")
 		]
 		var events := Night.resolve(_setup, state, bands, _rng(run_seed))
-		assert_int(_count(events, "beast_killed")).is_less_equal(3)
+		assert_int(_count(events, "beast_killed")).is_less_equal(2)
 
 
 func test_kill_share_matches_the_kill_chance_when_capacity_is_not_reached() -> void:
@@ -81,7 +81,7 @@ func test_a_tower_kills_no_more_than_its_capacity_in_a_night() -> void:
 		for band: int in range(1, 9):
 			bands.append(_band(band, 6, "split_ridge"))
 		var events := Night.resolve(_setup, state, bands, _rng(run_seed))
-		assert_int(_count(events, "beast_killed")).is_less_equal(6)
+		assert_int(_count(events, "beast_killed")).is_less_equal(8)
 
 
 func test_later_bands_set_off_later() -> void:

@@ -3,7 +3,7 @@ extends RefCounted
 ## One seeded run with no window: simulate, then write its telemetry file.
 
 const SETTINGS := {
-	"valley": "grey_box",
+	"valley": "braided",
 	"herd_personality": "steady",
 	"modifier": null,
 	"bot_strategy": "none",

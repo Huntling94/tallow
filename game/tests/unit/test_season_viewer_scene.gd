@@ -21,7 +21,7 @@ func _watching() -> SeasonViewer:
 
 
 func _setup() -> RunSetup:
-	return GameData.load_setup("grey_box", "steady")
+	return GameData.load_setup("braided", "steady")
 
 
 ## The same choices, played straight on the simulation. `seasons` holds one
@@ -97,7 +97,7 @@ func test_the_new_run_button_starts_again_on_the_same_seed() -> void:
 	assert_int(viewer.played).is_equal(0)
 	assert_bool(viewer.is_preparing()).is_true()
 	assert_array(viewer.events()).is_empty()
-	assert_str(_text(viewer, "%Totals")).contains("Money  600")
+	assert_str(_text(viewer, "%Totals")).contains("Money  300")
 	assert_dict(viewer.get_node("%Map")._frame["defences"]).is_empty()
 
 

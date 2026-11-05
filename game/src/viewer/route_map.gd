@@ -23,6 +23,7 @@ const KILL_SPREAD := Vector2(9.0, 7.0)
 const CLICK_TOLERANCE := 12.0
 const HOVER_WIDTH := 12.0
 const SPOT_RADIUS := 5.0
+const STRIPE_LENGTH := 16.0
 
 var _layout: ValleyLayout
 var _graph: RouteGraph
@@ -74,6 +75,14 @@ func _notification(what: int) -> void:
 		queue_redraw()
 
 
+## The share of the herd expected through the segment under the mouse, as a
+## percentage, or -1 when the mouse is on no segment.
+func hover_share() -> float:
+	if _hover == "":
+		return -1.0
+	return _layout.herd_share_ppm(_hover, _frame["routes"]) / 10000.0
+
+
 func _segment_under(point: Vector2) -> String:
 	return _layout.segment_at(_to_sheet(point), CLICK_TOLERANCE)
 
@@ -87,6 +96,7 @@ func _draw() -> void:
 	_draw_routes()
 	_draw_places()
 	_draw_open_spots()
+	_draw_hover_note()
 	_draw_defences()
 	_draw_kill_marks()
 	_draw_bands()
@@ -134,10 +144,10 @@ func _draw_ring(centre: Vector2, radii: Vector2, tilt: float) -> void:
 
 
 func _draw_routes() -> void:
-	for segment_id: String in ValleyLayout.PATHS:
+	for segment_id: String in _layout.drawn_segments():
 		if not _layout.is_shared(segment_id):
 			_draw_path(segment_id, ROUTE_WIDTH)
-	for segment_id: String in ValleyLayout.PATHS:
+	for segment_id: String in _layout.drawn_segments():
 		if _layout.is_shared(segment_id):
 			_draw_path(segment_id, SHARED_WIDTH)
 	for option: Dictionary in _frame["routes"]:
@@ -158,21 +168,39 @@ func _draw_open_spots() -> void:
 	if not _picking:
 		return
 	var defences: Dictionary = _frame["defences"]
-	for segment_id: String in ValleyLayout.PATHS:
-		if _graph.has_segment(segment_id) and not defences.has(segment_id):
+	for segment_id: String in _layout.drawn_segments():
+		if not _graph.is_closed(segment_id) and not defences.has(segment_id):
 			var centre := _to_screen(_layout.defence_spot(segment_id))
 			var radius := SPOT_RADIUS * _scale()
 			draw_circle(centre, radius, ValleyLayout.GROUND_COLOR)
 			draw_arc(centre, radius, 0.0, TAU, 20, ValleyLayout.LAMP_COLOR, 1.5, true)
 
 
+func _draw_hover_note() -> void:
+	if _hover == "":
+		return
+	var text := "%.0f%% of the herd" % hover_share()
+	var at := _layout.point_at(_hover, 0.5) + Vector2(10, -8)
+	_draw_text(at, text, ValleyLayout.LAMP_COLOR, LABEL_SIZE)
+
+
 func _draw_path(segment_id: String, width: float) -> void:
-	var color := _layout.segment_color(segment_id)
+	var colors := _layout.segment_colors(segment_id)
+	var color := colors[0]
 	var points := PackedVector2Array()
 	for point: Vector2 in ValleyLayout.PATHS[segment_id]:
 		points.append(_to_screen(point))
 		draw_circle(_to_screen(point), width * _scale() / 2.0, color)
 	draw_polyline(points, color, width * _scale(), true)
+	if colors.size() > 1:
+		for index: int in range(1, points.size()):
+			draw_dashed_line(
+				points[index - 1],
+				points[index],
+				colors[1],
+				width * _scale(),
+				STRIPE_LENGTH * _scale()
+			)
 
 
 func _draw_route_label(option: Dictionary) -> void:

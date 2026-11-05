@@ -67,6 +67,7 @@ func test_several_defences_over_two_seasons_match_the_seasons_they_make() -> voi
 	first.place("fence", "ford_crossing")
 	first.place("harpoon_tower", "cairn_west")
 	_assert_matches_the_season(first, run)
+	run.state.money = 500
 	var second := DefenceDraft.new(setup, run.state)
 	second.place("pit", "ridge_climb")
 	_assert_matches_the_season(second, run)
@@ -143,6 +144,15 @@ func test_a_taken_segment_is_refused_and_changes_nothing() -> void:
 	assert_int(draft.commands().size()).is_equal(1)
 
 
+func test_a_closed_segment_is_refused_with_the_simulations_reason() -> void:
+	var setup := GameData.load_setup("braided", "steady")
+	var draft := DefenceDraft.new(setup, _run(setup).state)
+	var money := draft.money()
+	assert_str(draft.place("harpoon_tower", "neck_pass")).is_equal("segment_closed")
+	assert_int(draft.money()).is_equal(money)
+	assert_array(draft.commands()).is_empty()
+
+
 func test_a_defence_too_dear_is_refused_and_changes_nothing() -> void:
 	var setup := _setup()
 	var run := _run(setup)
@@ -172,6 +182,7 @@ func test_the_frame_marks_only_this_seasons_defences_as_new() -> void:
 	var first := DefenceDraft.new(setup, run.state)
 	first.place("fence", "ford_crossing")
 	run.play_season(first.commands())
+	run.state.money = 500
 	var second := DefenceDraft.new(setup, run.state)
 	second.place("pit", "cairn_west")
 	var frame := second.frame()

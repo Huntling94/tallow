@@ -21,7 +21,7 @@ func _watching() -> SeasonViewer:
 
 
 func _setup() -> RunSetup:
-	return GameData.load_setup("grey_box", "steady")
+	return GameData.load_setup("braided", "steady")
 
 
 ## The same choices, played straight on the simulation. `seasons` holds one
@@ -78,9 +78,8 @@ func _expected_odds(viewer: SeasonViewer, draft: DefenceDraft) -> void:
 
 func _odds_text(viewer: SeasonViewer) -> String:
 	var parts: PackedStringArray = []
-	for child: Node in viewer.get_node("%Odds").get_children():
-		if child is Label:
-			parts.append((child as Label).text)
+	for row: Node in viewer.get_node("%Odds").get_children():
+		parts.append((row.get_child(0) as Label).text)
 	return " ".join(parts)
 
 
@@ -104,9 +103,9 @@ func test_each_defence_button_gives_its_numbers() -> void:
 	assert_str(_defence_button(viewer, 0).text).contains("Drive fence").contains("40")
 	assert_str(_defence_button(viewer, 0).text).contains("threat 2").contains("no kills")
 	assert_str(_defence_button(viewer, 1).text).contains("Pit trap").contains("80")
-	assert_str(_defence_button(viewer, 1).text).contains("40%").contains("3 a night")
+	assert_str(_defence_button(viewer, 1).text).contains("40%").contains("2 a night")
 	assert_str(_defence_button(viewer, 2).text).contains("Harpoon tower").contains("120")
-	assert_str(_defence_button(viewer, 2).text).contains("25%").contains("6 a night")
+	assert_str(_defence_button(viewer, 2).text).contains("25%").contains("8 a night")
 
 
 func test_clicking_a_route_places_the_picked_defence() -> void:
@@ -115,7 +114,7 @@ func test_clicking_a_route_places_the_picked_defence() -> void:
 	var map_odds := str(_frame(viewer)["routes"])
 	_defence_button(viewer, 0).pressed.emit()
 	_click(viewer, FORD)
-	assert_str(_text(viewer, "%Totals")).contains("Money  560")
+	assert_str(_text(viewer, "%Totals")).contains("Money  260")
 	assert_str(_odds_text(viewer)).is_not_equal(odds)
 	assert_str(_frame(viewer)["defences"].get(FORD, "")).is_equal("fence")
 	assert_str(str(_frame(viewer)["routes"])).is_not_equal(map_odds)
@@ -155,6 +154,36 @@ func test_the_hover_mark_goes_when_the_mouse_leaves_the_map() -> void:
 	assert_str(map._hover).is_empty()
 
 
+func test_a_closed_segment_has_no_room_and_the_panel_says_why() -> void:
+	var viewer := _viewer()
+	viewer.pick_defence("harpoon_tower")
+	_click(viewer, "neck_pass")
+	assert_str(_text(viewer, "%Hint")).is_equal(SeasonViewer.HINT_CLOSED)
+	assert_dict(_frame(viewer)["defences"]).is_empty()
+	viewer.pick_defence("harpoon_tower")
+	_click(viewer, "town_approach")
+	assert_str(_text(viewer, "%Hint")).is_equal(SeasonViewer.HINT_CLOSED)
+
+
+func test_hovering_a_segment_shows_the_herd_through_it() -> void:
+	var viewer := _viewer()
+	var map := viewer.get_node("%Map") as RouteMap
+	map.size = ValleyLayout.SHEET
+	var motion := InputEventMouseMotion.new()
+	motion.position = ValleyLayout.new(_setup().graph).point_at("ridge_drop", 0.5)
+	map._gui_input(motion)
+	var before_fence := map.hover_share()
+	var routes: Array = _frame(viewer)["routes"]
+	var expected := 0
+	for option: Dictionary in routes:
+		if option["route"] in ["the_saddle", "split_ridge"]:
+			expected += option["p_ppm"]
+	assert_float(before_fence).is_equal_approx(expected / 10000.0, 0.001)
+	viewer.pick_defence("fence")
+	_click(viewer, "ridge_climb")
+	assert_float(map.hover_share()).is_not_equal(before_fence)
+
+
 func test_a_click_away_from_every_route_does_nothing() -> void:
 	var viewer := _viewer()
 	viewer.pick_defence("fence")
@@ -165,14 +194,14 @@ func test_a_click_away_from_every_route_does_nothing() -> void:
 	click.pressed = true
 	click.position = Vector2(560, 40)
 	map._gui_input(click)
-	assert_str(_text(viewer, "%Totals")).contains("Money  600")
+	assert_str(_text(viewer, "%Totals")).contains("Money  300")
 
 
 func test_a_click_with_no_defence_picked_says_so() -> void:
 	var viewer := _viewer()
 	_click(viewer, FORD)
 	assert_str(_text(viewer, "%Hint")).is_equal(SeasonViewer.HINT_PICK_FIRST)
-	assert_str(_text(viewer, "%Totals")).contains("Money  600")
+	assert_str(_text(viewer, "%Totals")).contains("Money  300")
 
 
 func test_clicking_a_defence_placed_this_season_takes_it_back() -> void:
@@ -180,7 +209,7 @@ func test_clicking_a_defence_placed_this_season_takes_it_back() -> void:
 	viewer.pick_defence("pit")
 	_click(viewer, FORD)
 	_click(viewer, FORD)
-	assert_str(_text(viewer, "%Totals")).contains("Money  600")
+	assert_str(_text(viewer, "%Totals")).contains("Money  300")
 
 
 func test_a_defence_from_an_earlier_night_stays_and_the_panel_says_why() -> void:
@@ -198,16 +227,14 @@ func test_a_defence_from_an_earlier_night_stays_and_the_panel_says_why() -> void
 func test_a_defence_it_cannot_afford_is_refused_and_the_panel_says_why() -> void:
 	var viewer := _viewer()
 	viewer.pick_defence("harpoon_tower")
-	for segment_id: String in [
-		"neck_pass", "cairn_west", "cairn_south", "ridge_climb", "ridge_drop"
-	]:
+	for segment_id: String in ["cairn_west", "ridge_drop"]:
 		_click(viewer, segment_id)
-	assert_str(_text(viewer, "%Totals")).contains("Money  0")
+	assert_str(_text(viewer, "%Totals")).contains("Money  60")
 	var odds := _odds_text(viewer)
 	_click(viewer, FORD)
 	assert_str(_odds_text(viewer)).is_equal(odds)
 	assert_str(_text(viewer, "%Hint")).contains("Not enough money")
-	assert_str(_text(viewer, "%Totals")).contains("Money  0")
+	assert_str(_text(viewer, "%Totals")).contains("Money  60")
 
 
 func test_releasing_plays_the_same_season_as_a_direct_run() -> void:
@@ -223,16 +250,14 @@ func test_releasing_plays_the_same_season_as_a_direct_run() -> void:
 
 func test_a_whole_run_of_choices_matches_a_direct_run() -> void:
 	var viewer := _viewer()
+	viewer.release()
+	viewer.show_season(2)
 	viewer.pick_defence("fence")
 	_click(viewer, FORD)
 	viewer.release()
-	viewer.show_season(2)
-	viewer.pick_defence("pit")
-	_click(viewer, CAIRN)
-	viewer.release()
 	viewer.show_season(3)
 	viewer.release()
-	var builds := [[["fence", FORD]], [["pit", CAIRN]], []]
+	var builds := [[], [["fence", FORD]], []]
 	assert_str(str(viewer.events())).is_equal(str(_direct_run(42, builds)))
 
 

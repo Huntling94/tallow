@@ -18,7 +18,7 @@ func test_a_run_writes_header_events_and_summary() -> void:
 	var records := _run(42, 3, "a.jsonl")
 	assert_str(records[0]["type"]).is_equal("run_start")
 	assert_int(int(records[0]["seed"])).is_equal(42)
-	assert_str(records[0]["settings"]["valley"]).is_equal("grey_box")
+	assert_str(records[0]["settings"]["valley"]).is_equal("braided")
 	assert_str(records[0]["settings"]["herd_personality"]).is_equal("steady")
 	assert_str(records[-1]["type"]).is_equal("run_end")
 	assert_int(int(records[-1]["seasons"])).is_equal(3)
